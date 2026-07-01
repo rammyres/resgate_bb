@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="pt-BR">
+{% from "_macros.html" import bloco_banco %}
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resgate de Depósito Judicial / Precatório — Banco do Brasil</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="page">
+  <header class="page-header">
+    <h1>Solicitação de Resgate de Depósito Judicial / Precatório</h1>
+    <p class="subtitle">Preencha os dados abaixo para gerar o formulário do Banco do Brasil já pronto para assinatura (exceto TJ-SP).</p>
+  </header>
+
+  <form id="wizard-form" novalidate>
+
+    <!-- 1. Quem preenche -->
+    <fieldset class="card">
+      <legend>1. Quem está preenchendo este formulário?</legend>
+      <div class="radio-row">
+        <label class="radio-option">
+          <input type="radio" name="quem_preenche" value="beneficiario" required>
+          O próprio beneficiário
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="quem_preenche" value="procurador">
+          Procurador / Representante legal
+        </label>
+      </div>
+    </fieldset>
+
+    <!-- 2. Beneficiário -->
+    <fieldset class="card">
+      <legend>2. Beneficiário indicado no Documento de Levantamento</legend>
+      <div class="grid-2">
+        <label>Nome completo
+          <input type="text" name="beneficiario.nome" required>
+        </label>
+        <label>CPF/CNPJ
+          <input type="text" name="beneficiario.cpf_cnpj" required inputmode="numeric">
+        </label>
+      </div>
+    </fieldset>
+
+    <!-- 2b. Representante -->
+    <fieldset class="card hidden" id="bloco-representante">
+      <legend>2.1. Representante legal / Procurador</legend>
+      <p class="hint">A procuração deve ter sido emitida há menos de 2 anos, com poderes específicos para receber e dar quitação. Para Precatório/RPV Federal por procuração, a Resolução 822/2023 do CJF exige procuração específica com o número da conta de depósito ou de registro de pagamento.</p>
+      <div class="grid-2">
+        <label>Nome completo
+          <input type="text" name="representante.nome">
+        </label>
+        <label>CPF/CNPJ
+          <input type="text" name="representante.cpf_cnpj" inputmode="numeric">
+        </label>
+      </div>
+    </fieldset>
+
+    <!-- 3. Tipo de depósito -->
+    <fieldset class="card">
+      <legend>3. Tipo de depósito</legend>
+      <div class="radio-row">
+        <label class="radio-option"><input type="radio" name="tipo_deposito" value="estadual" required> Depósito Estadual</label>
+        <label class="radio-option"><input type="radio" name="tipo_deposito" value="trabalhista"> Depósito Trabalhista</label>
+        <label class="radio-option"><input type="radio" name="tipo_deposito" value="precatorio"> Precatório ou RPV Federal</label>
+      </div>
+    </fieldset>
+
+    <!-- 4. Contas judiciais -->
+    <fieldset class="card">
+      <legend>4. Conta(s) judicial(ais)</legend>
+      <div class="grid-3">
+        <label>Conta 1
+          <input type="text" name="contas_judiciais.0" required>
+        </label>
+        <label>Conta 2 <span class="opt">(opcional)</span>
+          <input type="text" name="contas_judiciais.1">
+        </label>
+        <label>Conta 3 <span class="opt">(opcional)</span>
+          <input type="text" name="contas_judiciais.2">
+        </label>
+      </div>
+    </fieldset>
+
+    <!-- 5. Forma de recebimento -->
+    <fieldset class="card">
+      <legend>5. Forma de recebimento dos valores resgatados</legend>
+      <div class="radio-col">
+        <label class="radio-option"><input type="radio" name="forma_recebimento" value="autorizacao_permanente" required> Autorização permanente para crédito em conta do beneficiário no Banco do Brasil</label>
+        <label class="radio-option"><input type="radio" name="forma_recebimento" value="convenio_djc"> Convênio de resgate centralizado – DJC</label>
+        <label class="radio-option"><input type="radio" name="forma_recebimento" value="credito_beneficiario"> Crédito em Conta BB ou TED para o BENEFICIÁRIO</label>
+        <label class="radio-option hidden" id="opcao-credito-representante"><input type="radio" name="forma_recebimento" value="credito_representante"> Crédito em Conta BB ou TED para o REPRESENTANTE LEGAL</label>
+        <label class="radio-option"><input type="radio" name="forma_recebimento" value="especie"> Pagamento em espécie em qualquer agência da UF de jurisdição do Tribunal</label>
+      </div>
+
+      <p class="hint warn">Vedado crédito a terceiros: a conta informada deve pertencer ao próprio titular indicado.</p>
+
+      <!-- Bloco dados bancários: BENEFICIÁRIO -->
+      <div id="bloco-banco-beneficiario" class="sub-card hidden">
+        <h3>Dados bancários — Crédito para o BENEFICIÁRIO</h3>
+        {{ bloco_banco('credito_beneficiario') }}
+      </div>
+
+      <!-- Bloco dados bancários: REPRESENTANTE -->
+      <div id="bloco-banco-representante" class="sub-card hidden">
+        <h3>Dados bancários — Crédito para o REPRESENTANTE LEGAL</h3>
+        {{ bloco_banco('credito_representante') }}
+      </div>
+
+      <!-- Bloco espécie -->
+      <div id="bloco-especie" class="sub-card hidden">
+        <label>Se o saque for em outra UF, informe o prefixo da agência <span class="opt">(opcional)</span>
+          <input type="text" name="especie.prefixo_agencia">
+        </label>
+      </div>
+    </fieldset>
+
+    <!-- 6. Imposto de renda (só Precatório/RPV) -->
+    <fieldset class="card hidden" id="bloco-ir">
+      <legend>6. Imposto de Renda — Precatório / RPV Federal</legend>
+      <div class="radio-row">
+        <label class="radio-option"><input type="radio" name="ir.isento" value="sim"> O beneficiário é isento / valores isentos</label>
+        <label class="radio-option"><input type="radio" name="ir.isento" value="nao"> Não é isento</label>
+      </div>
+
+      <div id="bloco-declaracao-isencao" class="sub-card hidden">
+        <h3>Declaração de Isenção de Imposto de Renda</h3>
+        <p class="hint">Como o beneficiário foi declarado isento, a declaração de isenção (modelo IN SRF nº 491/2005) será gerada automaticamente e anexada ao final do PDF.</p>
+
+        <div class="radio-row">
+          <label class="radio-option"><input type="radio" name="ir.declaracao.tipo" value="isento" checked> Rendimento isento ou não tributável</label>
+          <label class="radio-option"><input type="radio" name="ir.declaracao.tipo" value="simples"> Inscrita no SIMPLES (microempresas/EPP)</label>
+        </div>
+
+        <div class="grid-2">
+          <label>Nome / Razão social do declarante
+            <input type="text" name="ir.declaracao.nome">
+            <span class="hint-inline">Use os dados do beneficiário (ou do representante legal, se PJ).</span>
+          </label>
+          <label>CPF/CNPJ do declarante
+            <input type="text" name="ir.declaracao.cpf_cnpj">
+          </label>
+        </div>
+        <label>Endereço completo (residencial ou domicílio fiscal)
+          <input type="text" name="ir.declaracao.endereco">
+        </label>
+        <div class="grid-3">
+          <label>Número do processo
+            <input type="text" name="ir.declaracao.numero_processo" placeholder="0000000-00.0000.0.00.0000">
+          </label>
+          <label>Vara / Seção judiciária
+            <input type="text" name="ir.declaracao.vara" placeholder="Ex.: 2ª Vara de...">
+          </label>
+          <label>Município
+            <input type="text" name="ir.declaracao.municipio" placeholder="Cidade – UF">
+          </label>
+        </div>
+        <div id="bloco-valor-isencao" class="grid-2">
+          <label>Valor a receber (R$)
+            <input type="text" name="ir.declaracao.valor" placeholder="14.500,26">
+          </label>
+          <label>Data da declaração
+            <input type="date" name="ir.declaracao.data">
+          </label>
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- 7. Analfabeto -->
+    <fieldset class="card">
+      <legend>7. Beneficiário analfabeto?</legend>
+      <div class="radio-row">
+        <label class="radio-option"><input type="radio" name="analfabeto.resposta" value="nao" required checked> Não</label>
+        <label class="radio-option"><input type="radio" name="analfabeto.resposta" value="sim"> Sim</label>
+      </div>
+
+      <div id="bloco-analfabeto" class="sub-card hidden">
+        <div class="radio-row">
+          <label class="radio-option"><input type="radio" name="analfabeto.modo" value="testemunhas" checked> Assinatura com duas testemunhas (preenchido à mão no documento)</label>
+          <label class="radio-option"><input type="radio" name="analfabeto.modo" value="rogo"> Termo de quitação "a rogo" (assinado por um procurador/terceiro)</label>
+        </div>
+
+        <div id="bloco-rogo" class="sub-card hidden">
+          <p class="hint">Dados de quem assinará "a rogo" do beneficiário analfabeto:</p>
+          <div class="grid-2">
+            <label>Nome de quem assina
+              <input type="text" name="analfabeto.rogo.signer_nome">
+            </label>
+            <label>CPF de quem assina
+              <input type="text" name="analfabeto.rogo.signer_cpf">
+            </label>
+          </div>
+          <div class="grid-3">
+            <label>Nº da cédula de identidade (RG)
+              <input type="text" name="analfabeto.rogo.signer_rg_num">
+            </label>
+            <label>Órgão expedidor
+              <input type="text" name="analfabeto.rogo.signer_rg_orgao">
+            </label>
+            <label>Data de expedição
+              <input type="text" name="analfabeto.rogo.signer_rg_data" placeholder="dd/mm/aaaa">
+            </label>
+          </div>
+
+          <p class="hint">Dados do beneficiário analfabeto (a rogo de quem o termo é assinado):</p>
+          <label>Nome do beneficiário
+            <input type="text" name="analfabeto.rogo.benef_nome">
+          </label>
+          <div class="grid-3">
+            <label>Nº da cédula de identidade (RG)
+              <input type="text" name="analfabeto.rogo.benef_rg_num">
+            </label>
+            <label>Órgão expedidor
+              <input type="text" name="analfabeto.rogo.benef_rg_orgao">
+            </label>
+            <label>Data de expedição
+              <input type="text" name="analfabeto.rogo.benef_rg_data" placeholder="dd/mm/aaaa">
+            </label>
+          </div>
+          <label>Número do Alvará Judicial
+            <input type="text" name="analfabeto.rogo.alvara_num" placeholder="AAAA/SSSSSSSSS">
+          </label>
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- 8. Contato -->
+    <fieldset class="card">
+      <legend>8. Dados para contato</legend>
+      <div class="grid-3">
+        <label>Telefone — DDD
+          <input type="text" name="contato.tel_ddd" inputmode="numeric" maxlength="3">
+        </label>
+        <label>Telefone — Número
+          <input type="text" name="contato.tel_num" inputmode="numeric">
+        </label>
+        <label>E-mail
+          <input type="email" name="contato.email">
+        </label>
+      </div>
+      <div class="grid-3">
+        <label>Celular — DDD
+          <input type="text" name="contato.cel_ddd" inputmode="numeric" maxlength="3">
+        </label>
+        <label>Celular — Número
+          <input type="text" name="contato.cel_num" inputmode="numeric">
+        </label>
+      </div>
+    </fieldset>
+
+    <!-- 9. Local e data -->
+    <fieldset class="card">
+      <legend>9. Local e data</legend>
+      <div class="grid-2">
+        <label>Local (cidade – UF)
+          <input type="text" name="local_data.local" required placeholder="Ex.: Teresina – PI">
+        </label>
+        <label>Data
+          <input type="date" name="local_data.data" required>
+        </label>
+      </div>
+    </fieldset>
+
+    <div id="form-errors" class="errors hidden" role="alert"></div>
+
+    <div class="actions">
+      <button type="submit" id="btn-gerar">Gerar PDF preenchido</button>
+      <span id="status-msg" class="status-msg"></span>
+    </div>
+  </form>
+
+  <footer class="page-footer">
+    <p>Esta ferramenta gera o PDF para conferência e assinatura — ela não substitui as orientações do documento de resgate nem envia nada automaticamente ao Banco do Brasil.</p>
+  </footer>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
