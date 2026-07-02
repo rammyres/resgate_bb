@@ -1,11 +1,18 @@
-{% macro bloco_banco(prefix) %}
-  <div class="grid-2">
-    <label>Banco — Nº
-      <input type="text" name="{{ prefix }}.banco_num" placeholder="Ex.: 001">
+{% macro bloco_banco(prefix, titular_label) %}
+  <div class="bank-combobox" data-bank-combobox>
+    <label>Buscar banco <span class="opt">(digite o código ou o nome)</span>
+      <input type="text" class="bank-search-input" autocomplete="off" placeholder="Ex.: 001 ou Banco do Brasil" data-bank-search>
     </label>
-    <label>Banco — Nome
-      <input type="text" name="{{ prefix }}.banco_nome" placeholder="Ex.: Banco do Brasil S.A.">
-    </label>
+    <ul class="bank-dropdown hidden" data-bank-dropdown></ul>
+    <div class="grid-2">
+      <label>Banco — Nº
+        <input type="text" name="{{ prefix }}.banco_num" placeholder="Ex.: 001" data-bank-num>
+      </label>
+      <label>Banco — Nome
+        <input type="text" name="{{ prefix }}.banco_nome" placeholder="Ex.: Banco do Brasil S.A." data-bank-nome>
+      </label>
+    </div>
+    <p class="hint">Selecione um banco na busca acima para preencher automaticamente, ou edite os campos manualmente se o seu banco não estiver na lista.</p>
   </div>
   <div class="grid-2">
     <label>Agência
@@ -15,14 +22,7 @@
       <input type="text" name="{{ prefix }}.conta">
     </label>
   </div>
-  <div class="grid-2">
-    <label>Nome do titular da conta
-      <input type="text" name="{{ prefix }}.titular_nome">
-    </label>
-    <label>CPF/CNPJ do titular da conta
-      <input type="text" name="{{ prefix }}.titular_cpf_cnpj">
-    </label>
-  </div>
+  <p class="hint">Titular da conta: {{ titular_label }}, informado(a) acima — o próprio formulário do BB veda crédito a terceiros, então não é pedido de novo aqui.</p>
 
   <div class="radio-row">
     <label class="radio-option"><input type="radio" name="{{ prefix }}.tipo_conta" value="corrente"> Conta Corrente</label>

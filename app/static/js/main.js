@@ -15,6 +15,8 @@
 
   const blocoRepresentante = document.getElementById("bloco-representante");
   const opcaoCreditoRepresentante = document.getElementById("opcao-credito-representante");
+  const opcaoCreditoDividido = document.getElementById("opcao-credito-dividido");
+  const hintDividido = document.getElementById("hint-dividido");
   const blocoBancoBeneficiario = document.getElementById("bloco-banco-beneficiario");
   const blocoBancoRepresentante = document.getElementById("bloco-banco-representante");
   const blocoEspecie = document.getElementById("bloco-especie");
@@ -34,9 +36,12 @@
     const isProcurador = v === "procurador";
     setVisible(blocoRepresentante, isProcurador);
     setVisible(opcaoCreditoRepresentante, isProcurador);
+    setVisible(opcaoCreditoDividido, isProcurador);
     if (!isProcurador) {
-      const radioRep = form.querySelector('input[name="forma_recebimento"][value="credito_representante"]');
-      if (radioRep && radioRep.checked) radioRep.checked = false;
+      ["credito_representante", "credito_dividido"].forEach((val) => {
+        const radio = form.querySelector(`input[name="forma_recebimento"][value="${val}"]`);
+        if (radio && radio.checked) radio.checked = false;
+      });
       atualizarFormaRecebimento();
     }
   }
@@ -48,9 +53,10 @@
 
   function atualizarFormaRecebimento() {
     const v = radioValue("forma_recebimento");
-    setVisible(blocoBancoBeneficiario, v === "credito_beneficiario");
-    setVisible(blocoBancoRepresentante, v === "credito_representante");
+    setVisible(blocoBancoBeneficiario, v === "credito_beneficiario" || v === "credito_dividido");
+    setVisible(blocoBancoRepresentante, v === "credito_representante" || v === "credito_dividido");
     setVisible(blocoEspecie, v === "especie");
+    setVisible(hintDividido, v === "credito_dividido");
   }
 
   function atualizarIsencao() {
@@ -92,6 +98,114 @@
   atualizarTipoDeclaracao();
   atualizarAnalfabeto();
   atualizarModoAnalfabeto();
+
+  // ---------------------------------------------------------------------
+  // Máscaras de entrada: CPF/CNPJ e número de processo (padrão CNJ)
+  // ---------------------------------------------------------------------
+  function applyMask(digits, template) {
+    let result = "";
+    let di = 0;
+    for (const ch of template) {
+      if (di >= digits.length) break;
+      if (ch === "#") {
+        result += digits[di++];
+      } else {
+        result += ch;
+      }
+    }
+    return result;
+  }
+
+  function formatCpfCnpj(rawDigits) {
+    const digits = rawDigits.slice(0, 14);
+    if (digits.length <= 11) {
+      return applyMask(digits, "###.###.###-##");
+    }
+    return applyMask(digits, "##.###.###/####-##");
+  }
+
+  function formatProcesso(rawDigits) {
+    const digits = rawDigits.slice(0, 20);
+    return applyMask(digits, "#######-##.####.#.##.####");
+  }
+
+  const MASK_FORMATTERS = {
+    cpf_cnpj: formatCpfCnpj,
+    processo: formatProcesso,
+  };
+
+  function initMasks() {
+    form.querySelectorAll("[data-mask]").forEach((input) => {
+      const formatter = MASK_FORMATTERS[input.dataset.mask];
+      if (!formatter) return;
+      input.addEventListener("input", () => {
+        const digits = input.value.replace(/\D/g, "");
+        input.value = formatter(digits);
+      });
+    });
+  }
+  initMasks();
+
+  // ---------------------------------------------------------------------
+  // Combobox de busca de bancos (código + nome)
+  // ---------------------------------------------------------------------
+  function normalizeText(s) {
+    return s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
+  function initBankCombobox(container) {
+    const searchInput = container.querySelector("[data-bank-search]");
+    const dropdown = container.querySelector("[data-bank-dropdown]");
+    const numInput = container.querySelector("[data-bank-num]");
+    const nomeInput = container.querySelector("[data-bank-nome]");
+    const bancos = window.BANCOS_BR || [];
+
+    function renderResults(query) {
+      const normQuery = normalizeText(query.trim());
+      dropdown.innerHTML = "";
+      if (!normQuery) {
+        hide(dropdown);
+        return;
+      }
+      const results = bancos
+        .filter((b) => b.codigo.startsWith(normQuery) || normalizeText(b.nome).includes(normQuery))
+        .slice(0, 8);
+
+      if (!results.length) {
+        hide(dropdown);
+        return;
+      }
+
+      results.forEach((b) => {
+        const li = document.createElement("li");
+        li.textContent = `${b.codigo} — ${b.nome}`;
+        li.tabIndex = -1;
+        li.addEventListener("mousedown", (ev) => {
+          // mousedown (em vez de click) dispara antes do blur do input
+          ev.preventDefault();
+          numInput.value = b.codigo;
+          nomeInput.value = b.nome;
+          searchInput.value = `${b.codigo} — ${b.nome}`;
+          hide(dropdown);
+        });
+        dropdown.appendChild(li);
+      });
+      show(dropdown);
+    }
+
+    searchInput.addEventListener("input", () => renderResults(searchInput.value));
+    searchInput.addEventListener("focus", () => {
+      if (searchInput.value.trim()) renderResults(searchInput.value);
+    });
+    searchInput.addEventListener("blur", () => {
+      setTimeout(() => hide(dropdown), 100);
+    });
+  }
+
+  form.querySelectorAll("[data-bank-combobox]").forEach(initBankCombobox);
 
   // ---------------------------------------------------------------------
   // Construção do payload aninhado a partir dos campos "a.b.c" / "a.0"

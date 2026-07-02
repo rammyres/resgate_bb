@@ -1,4 +1,11 @@
-import json
+"""
+Rotas Flask.
+
+Importante: nenhum dado da solicitação (nome, CPF, dados bancários,
+informações de IR etc.) é persistido no servidor. O PDF é gerado
+inteiramente em memória a partir do payload recebido e devolvido
+diretamente na resposta HTTP — nada é gravado em banco de dados ou disco.
+"""
 from datetime import datetime
 from io import BytesIO
 
@@ -8,7 +15,6 @@ from pypdf import PdfReader, PdfWriter
 from .build_payload import build_formulario_values
 from .declaracao import gerar_declaracao_pdf
 from .pdf_fill import fill_formulario
-from .models import db, Solicitacao
 
 bp = Blueprint("main", __name__)
 
@@ -36,7 +42,6 @@ def gerar_pdf():
     # campos de texto deixam de ser exibidos pelos leitores de PDF.
     writer = PdfWriter(clone_from=reader)
 
-    gerou_declaracao = declaracao_dados is not None
     if declaracao_dados is not None:
         declaracao_bytes = gerar_declaracao_pdf(declaracao_dados)
         declaracao_reader = PdfReader(BytesIO(declaracao_bytes))
@@ -46,24 +51,6 @@ def gerar_pdf():
     output = BytesIO()
     writer.write(output)
     output.seek(0)
-
-    try:
-        registro = Solicitacao(
-            quem_preencheu=payload.get("quem_preenche", ""),
-            beneficiario_nome=(payload.get("beneficiario") or {}).get("nome", ""),
-            tipo_deposito=payload.get("tipo_deposito", ""),
-            forma_recebimento=payload.get("forma_recebimento", ""),
-            gerou_declaracao_isencao=gerou_declaracao,
-            beneficiario_analfabeto=(payload.get("analfabeto") or {}).get("resposta") == "sim",
-            ip_origem=request.headers.get("X-Forwarded-For", request.remote_addr),
-            payload_json=json.dumps(payload, ensure_ascii=False),
-        )
-        db.session.add(registro)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        # A geração do PDF não deve falhar por causa de um problema no
-        # registro de auditoria; apenas seguimos sem persistir o registro.
 
     nome_beneficiario = (payload.get("beneficiario") or {}).get("nome", "formulario")
     nome_arquivo_safe = "".join(

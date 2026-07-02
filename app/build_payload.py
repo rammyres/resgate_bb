@@ -7,6 +7,16 @@ Toda a validação "de negócio" (campos obrigatórios conforme as escolhas
 feitas pelo usuário) acontece aqui, no servidor — o JavaScript do
 formulário também valida no navegador, mas o backend nunca confia
 apenas nisso.
+
+Dados reaproveitados automaticamente (não são pedidos duas vezes)
+-------------------------------------------------------------------
+- O titular da conta em cada bloco de crédito (beneficiário ou
+  representante legal) é sempre o próprio beneficiário/representante já
+  identificado no topo do formulário — o PDF do BB é explícito ("Vedado
+  crédito a terceiros"), então não faz sentido perguntar de novo.
+- O nome/CPF do declarante na Declaração de Isenção de IR é sempre o do
+  beneficiário (é ele quem recebe o rendimento e precisa da isenção),
+  reaproveitando os dados já informados no topo do formulário.
 """
 from __future__ import annotations
 
@@ -15,12 +25,6 @@ from typing import Any
 
 from . import field_map as fm
 from .declaracao import DadosDeclaracao
-
-
-class ValidationError(Exception):
-    def __init__(self, errors: list[str]):
-        super().__init__("; ".join(errors))
-        self.errors = errors
 
 
 def _req(d: dict, key: str, label: str, errors: list[str]) -> str:
@@ -49,13 +53,19 @@ def build_formulario_values(
     # --- Identificação -----------------------------------------------------
     quem_preenche = payload.get("quem_preenche")
     benef = payload.get("beneficiario") or {}
-    values[fm.F_BENEF_NOME] = _req(benef, "nome", "Nome do beneficiário", errors)
-    values[fm.F_BENEF_CPF_CNPJ] = _req(benef, "cpf_cnpj", "CPF/CNPJ do beneficiário", errors)
+    benef_nome = _req(benef, "nome", "Nome do beneficiário", errors)
+    benef_cpf = _req(benef, "cpf_cnpj", "CPF/CNPJ do beneficiário", errors)
+    values[fm.F_BENEF_NOME] = benef_nome
+    values[fm.F_BENEF_CPF_CNPJ] = benef_cpf
 
+    rep_nome = ""
+    rep_cpf = ""
     if quem_preenche == "procurador":
         rep = payload.get("representante") or {}
-        values[fm.F_REP_NOME] = _req(rep, "nome", "Nome do representante legal/procurador", errors)
-        values[fm.F_REP_CPF_CNPJ] = _req(rep, "cpf_cnpj", "CPF/CNPJ do representante legal/procurador", errors)
+        rep_nome = _req(rep, "nome", "Nome do representante legal/procurador", errors)
+        rep_cpf = _req(rep, "cpf_cnpj", "CPF/CNPJ do representante legal/procurador", errors)
+        values[fm.F_REP_NOME] = rep_nome
+        values[fm.F_REP_CPF_CNPJ] = rep_cpf
     elif quem_preenche != "beneficiario":
         errors.append("Selecione quem está preenchendo o formulário.")
 
@@ -81,6 +91,12 @@ def build_formulario_values(
             values[field] = contas[idx]
 
     # --- Forma de recebimento --------------------------------------------------
+    # "credito_dividido" marca simultaneamente os dois checkboxes de
+    # crédito (beneficiário + representante legal) — o próprio PDF do BB
+    # já prevê valor "Parcial R$ / Percentual %" em cada um dos dois
+    # blocos, então dividir o valor entre as duas contas é uma combinação
+    # válida dentro do formulário original, não uma extensão criada por
+    # esta ferramenta.
     forma = payload.get("forma_recebimento")
     forma_checkbox_map = {
         "autorizacao_permanente": fm.F_FORMA_AUTORIZACAO_PERMANENTE,
@@ -89,24 +105,34 @@ def build_formulario_values(
         "credito_representante": fm.F_FORMA_CREDITO_REPRESENTANTE,
         "especie": fm.F_FORMA_ESPECIE,
     }
-    if forma not in forma_checkbox_map:
+    formas_validas = set(forma_checkbox_map) | {"credito_dividido"}
+
+    if forma not in formas_validas:
         errors.append("Selecione a forma de recebimento dos valores resgatados.")
+    elif forma == "credito_dividido":
+        values[fm.F_FORMA_CREDITO_BENEFICIARIO] = fm.CHECKED
+        values[fm.F_FORMA_CREDITO_REPRESENTANTE] = fm.CHECKED
     else:
         values[forma_checkbox_map[forma]] = fm.CHECKED
 
-    if forma == "credito_representante" and quem_preenche != "procurador":
+    if forma in ("credito_representante", "credito_dividido") and quem_preenche != "procurador":
         errors.append(
-            "Crédito para o representante legal só pode ser escolhido quando "
-            "há um representante legal/procurador identificado."
+            "Crédito para o representante legal (ou divisão entre beneficiário e "
+            "representante) só pode ser escolhido quando há um representante "
+            "legal/procurador identificado."
         )
 
-    def preencher_bloco_credito(dados: dict, prefixo_label: str, F: dict):
+    def preencher_bloco_credito(
+        dados: dict, prefixo_label: str, F: dict, titular_nome: str, titular_cpf: str
+    ):
         values[F["banco_num"]] = _req(dados, "banco_num", f"Banco (nº) — {prefixo_label}", errors)
         values[F["banco_nome"]] = dados.get("banco_nome", "").strip()
         values[F["agencia"]] = _req(dados, "agencia", f"Agência — {prefixo_label}", errors)
         values[F["conta"]] = _req(dados, "conta", f"Conta — {prefixo_label}", errors)
-        values[F["titular_nome"]] = _req(dados, "titular_nome", f"Nome do titular — {prefixo_label}", errors)
-        values[F["titular_cpf_cnpj"]] = _req(dados, "titular_cpf_cnpj", f"CPF/CNPJ do titular — {prefixo_label}", errors)
+        # Titular = o próprio beneficiário/representante já identificado
+        # acima (o PDF veda crédito a terceiros); não é pedido de novo.
+        values[F["titular_nome"]] = titular_nome
+        values[F["titular_cpf_cnpj"]] = titular_cpf
 
         tipo_conta = dados.get("tipo_conta")
         if tipo_conta == "corrente":
@@ -134,7 +160,7 @@ def build_formulario_values(
         else:
             errors.append(f"Selecione a opção de valor a resgatar — {prefixo_label}")
 
-    if forma == "credito_beneficiario":
+    if forma in ("credito_beneficiario", "credito_dividido"):
         dados = payload.get("credito_beneficiario") or {}
         F = dict(
             banco_num=fm.F_BENEF_BANCO_NUM, banco_nome=fm.F_BENEF_BANCO_NOME,
@@ -147,9 +173,9 @@ def build_formulario_values(
             valor_parcial_ck=fm.F_BENEF_VALOR_PARCIAL_CK, valor_parcial_rs=fm.F_BENEF_VALOR_PARCIAL_RS,
             valor_percentual=fm.F_BENEF_VALOR_PERCENTUAL,
         )
-        preencher_bloco_credito(dados, "dados bancários do beneficiário", F)
+        preencher_bloco_credito(dados, "dados bancários do beneficiário", F, benef_nome, benef_cpf)
 
-    elif forma == "credito_representante":
+    if forma in ("credito_representante", "credito_dividido"):
         dados = payload.get("credito_representante") or {}
         F = dict(
             banco_num=fm.F_REP_BANCO_NUM, banco_nome=fm.F_REP_BANCO_NOME,
@@ -162,9 +188,9 @@ def build_formulario_values(
             valor_parcial_ck=fm.F_REP_VALOR_PARCIAL_CK, valor_parcial_rs=fm.F_REP_VALOR_PARCIAL_RS,
             valor_percentual=fm.F_REP_VALOR_PERCENTUAL,
         )
-        preencher_bloco_credito(dados, "dados bancários do representante legal", F)
+        preencher_bloco_credito(dados, "dados bancários do representante legal", F, rep_nome, rep_cpf)
 
-    elif forma == "especie":
+    if forma == "especie":
         especie = payload.get("especie") or {}
         prefixo = especie.get("prefixo_agencia", "").strip()
         if prefixo:
@@ -185,8 +211,8 @@ def build_formulario_values(
         if isento == "sim":
             decl = ir.get("declaracao") or {}
             tipo_decl = decl.get("tipo", "isento")
-            nome_decl = _req(decl, "nome", "Nome (declaração de isenção)", errors)
-            cpf_decl = _req(decl, "cpf_cnpj", "CPF/CNPJ (declaração de isenção)", errors)
+            # Nome/CPF do declarante = os mesmos do beneficiário informados
+            # no topo do formulário (não pedidos de novo).
             endereco_decl = _req(decl, "endereco", "Endereço (declaração de isenção)", errors)
             processo_decl = _req(decl, "numero_processo", "Número do processo (declaração de isenção)", errors)
             vara_decl = _req(decl, "vara", "Vara/seção judiciária (declaração de isenção)", errors)
@@ -214,8 +240,8 @@ def build_formulario_values(
                 data_decl = date.today()
 
             declaracao_dados = DadosDeclaracao(
-                nome=nome_decl,
-                cpf_cnpj=cpf_decl,
+                nome=benef_nome,
+                cpf_cnpj=benef_cpf,
                 endereco=endereco_decl,
                 numero_processo=processo_decl,
                 vara=vara_decl,
@@ -284,5 +310,3 @@ def build_formulario_values(
     values = {k: v for k, v in values.items() if v not in (None, "")}
 
     return values, declaracao_dados, errors
-
-

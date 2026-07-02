@@ -39,7 +39,7 @@
           <input type="text" name="beneficiario.nome" required>
         </label>
         <label>CPF/CNPJ
-          <input type="text" name="beneficiario.cpf_cnpj" required inputmode="numeric">
+          <input type="text" name="beneficiario.cpf_cnpj" required inputmode="numeric" data-mask="cpf_cnpj" maxlength="18">
         </label>
       </div>
     </fieldset>
@@ -53,7 +53,7 @@
           <input type="text" name="representante.nome">
         </label>
         <label>CPF/CNPJ
-          <input type="text" name="representante.cpf_cnpj" inputmode="numeric">
+          <input type="text" name="representante.cpf_cnpj" inputmode="numeric" data-mask="cpf_cnpj" maxlength="18">
         </label>
       </div>
     </fieldset>
@@ -92,21 +92,23 @@
         <label class="radio-option"><input type="radio" name="forma_recebimento" value="convenio_djc"> Convênio de resgate centralizado – DJC</label>
         <label class="radio-option"><input type="radio" name="forma_recebimento" value="credito_beneficiario"> Crédito em Conta BB ou TED para o BENEFICIÁRIO</label>
         <label class="radio-option hidden" id="opcao-credito-representante"><input type="radio" name="forma_recebimento" value="credito_representante"> Crédito em Conta BB ou TED para o REPRESENTANTE LEGAL</label>
+        <label class="radio-option hidden" id="opcao-credito-dividido"><input type="radio" name="forma_recebimento" value="credito_dividido"> Dividir entre a conta do BENEFICIÁRIO e a do REPRESENTANTE LEGAL</label>
         <label class="radio-option"><input type="radio" name="forma_recebimento" value="especie"> Pagamento em espécie em qualquer agência da UF de jurisdição do Tribunal</label>
       </div>
 
       <p class="hint warn">Vedado crédito a terceiros: a conta informada deve pertencer ao próprio titular indicado.</p>
+      <p class="hint hidden" id="hint-dividido">Para dividir o valor, use a opção "Parcial (R$ ou %)" em cada bloco de conta abaixo e informe o valor ou percentual correspondente a cada parte.</p>
 
       <!-- Bloco dados bancários: BENEFICIÁRIO -->
       <div id="bloco-banco-beneficiario" class="sub-card hidden">
         <h3>Dados bancários — Crédito para o BENEFICIÁRIO</h3>
-        {{ bloco_banco('credito_beneficiario') }}
+        {{ bloco_banco('credito_beneficiario', 'o beneficiário') }}
       </div>
 
       <!-- Bloco dados bancários: REPRESENTANTE -->
       <div id="bloco-banco-representante" class="sub-card hidden">
         <h3>Dados bancários — Crédito para o REPRESENTANTE LEGAL</h3>
-        {{ bloco_banco('credito_representante') }}
+        {{ bloco_banco('credito_representante', 'o representante legal') }}
       </div>
 
       <!-- Bloco espécie -->
@@ -127,28 +129,19 @@
 
       <div id="bloco-declaracao-isencao" class="sub-card hidden">
         <h3>Declaração de Isenção de Imposto de Renda</h3>
-        <p class="hint">Como o beneficiário foi declarado isento, a declaração de isenção (modelo IN SRF nº 491/2005) será gerada automaticamente e anexada ao final do PDF.</p>
+        <p class="hint">Como o beneficiário foi declarado isento, a declaração de isenção (modelo IN SRF nº 491/2005) será gerada automaticamente e anexada ao final do PDF, usando o mesmo nome e CPF/CNPJ do beneficiário já informados no início do formulário.</p>
 
         <div class="radio-row">
           <label class="radio-option"><input type="radio" name="ir.declaracao.tipo" value="isento" checked> Rendimento isento ou não tributável</label>
           <label class="radio-option"><input type="radio" name="ir.declaracao.tipo" value="simples"> Inscrita no SIMPLES (microempresas/EPP)</label>
         </div>
 
-        <div class="grid-2">
-          <label>Nome / Razão social do declarante
-            <input type="text" name="ir.declaracao.nome">
-            <span class="hint-inline">Use os dados do beneficiário (ou do representante legal, se PJ).</span>
-          </label>
-          <label>CPF/CNPJ do declarante
-            <input type="text" name="ir.declaracao.cpf_cnpj">
-          </label>
-        </div>
         <label>Endereço completo (residencial ou domicílio fiscal)
           <input type="text" name="ir.declaracao.endereco">
         </label>
         <div class="grid-3">
           <label>Número do processo
-            <input type="text" name="ir.declaracao.numero_processo" placeholder="0000000-00.0000.0.00.0000">
+            <input type="text" name="ir.declaracao.numero_processo" placeholder="0000000-00.0000.0.00.0000" data-mask="processo" maxlength="25">
           </label>
           <label>Vara / Seção judiciária
             <input type="text" name="ir.declaracao.vara" placeholder="Ex.: 2ª Vara de...">
@@ -179,7 +172,7 @@
       <div id="bloco-analfabeto" class="sub-card hidden">
         <div class="radio-row">
           <label class="radio-option"><input type="radio" name="analfabeto.modo" value="testemunhas" checked> Assinatura com duas testemunhas (preenchido à mão no documento)</label>
-          <label class="radio-option"><input type="radio" name="analfabeto.modo" value="rogo"> Assinatura "a rogo" (assinado por terceiro não procurador)</label>
+          <label class="radio-option"><input type="radio" name="analfabeto.modo" value="rogo"> Termo de quitação "a rogo" (assinado por um procurador/terceiro)</label>
         </div>
 
         <div id="bloco-rogo" class="sub-card hidden">
@@ -189,7 +182,7 @@
               <input type="text" name="analfabeto.rogo.signer_nome">
             </label>
             <label>CPF de quem assina
-              <input type="text" name="analfabeto.rogo.signer_cpf">
+              <input type="text" name="analfabeto.rogo.signer_cpf" data-mask="cpf_cnpj" maxlength="18">
             </label>
           </div>
           <div class="grid-3">
@@ -276,6 +269,7 @@
   </footer>
 </div>
 
+<script src="{{ url_for('static', filename='js/bancos.js') }}"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

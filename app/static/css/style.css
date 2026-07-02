@@ -115,6 +115,34 @@ input:focus { outline: 2px solid var(--bb-blue); outline-offset: 1px; }
 
 .hidden { display: none !important; }
 
+.bank-combobox { position: relative; margin-bottom: .3rem; }
+.bank-dropdown {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 2px 0 0;
+  padding: .3rem 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.12);
+  max-height: 220px;
+  overflow-y: auto;
+}
+.bank-dropdown li {
+  padding: .5rem .75rem;
+  font-size: .88rem;
+  cursor: pointer;
+  color: var(--text);
+}
+.bank-dropdown li:hover,
+.bank-dropdown li:focus {
+  background: #eef2fb;
+}
+
 .errors {
   background: var(--danger-bg);
   border: 1px solid #f1c2bd;
