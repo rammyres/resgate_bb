@@ -2,7 +2,7 @@
 
 Ferramenta web que coleta os dados de uma solicitação de resgate de depósito
 judicial/precatório e exporta o `formulario.pdf` do Banco do Brasil já
-preenchido — incluindo, quando aplicável, a Declaração de Isenção de Imposto
+preenchido, incluindo, quando aplicável, a Declaração de Isenção de Imposto
 de Renda (modelo IN SRF nº 491/2005) anexada ao final do PDF.
 
 ## Como funciona
@@ -70,12 +70,7 @@ resgate_bb/
     └── resgate-bb.service   # unit systemd
 ```
 
-## Deploy na instância Oracle Cloud (Ubuntu, padrão `/opt/`)
-
-Este projeto segue o mesmo padrão de deploy usado nos demais projetos
-Flask: `Flask + gunicorn + systemd`, rodando como usuário `ubuntu` em
-`/opt/`, na porta **5051** (distinta das demais: 3000, 5000, 5050 já estão
-em uso por outros projetos).
+## Deploy
 
 ### 1. Copiar o projeto e instalar dependências
 
@@ -131,3 +126,5 @@ Acesse http://localhost:5051
   sendo avaliada a integração com a API pública do PJe para, a partir do
   número do processo (padrão CNJ), preencher automaticamente campos
   dados do beneficiário/procurador e número da conta judicial/ID
+- **Coleta automática de dados processuais via API pública do PJe:** atualização
+  da versão do formulário de resgate
