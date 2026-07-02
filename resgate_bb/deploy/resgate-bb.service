@@ -1,0 +1,17 @@
+[Unit]
+Description=Resgate BB - gerador de formulario de resgate de deposito judicial
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/resgate-bb
+Environment="PATH=/opt/resgate-bb/venv/bin"
+Environment="SECRET_KEY=TROQUE_ESTA_CHAVE_EM_PRODUCAO"
+ExecStart=/opt/resgate-bb/venv/bin/gunicorn --workers 2 --bind 0.0.0.0:5051 wsgi:app
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
