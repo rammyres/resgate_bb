@@ -161,7 +161,23 @@
     const dropdown = container.querySelector("[data-bank-dropdown]");
     const numInput = container.querySelector("[data-bank-num]");
     const nomeInput = container.querySelector("[data-bank-nome]");
+    const searchWrap = container.querySelector("[data-bank-search-wrap]");
+    const manualWrap = container.querySelector("[data-bank-manual-wrap]");
+    const toggleBtn = container.querySelector("[data-bank-toggle]");
     const bancos = window.BANCOS_BR || [];
+
+    function setManualMode(manual) {
+      setVisible(manualWrap, manual);
+      setVisible(searchWrap, !manual);
+      toggleBtn.textContent = manual
+        ? "Usar a busca de banco"
+        : "Meu banco não está na lista — preencher manualmente";
+    }
+    setManualMode(false);
+    toggleBtn.addEventListener("click", () => {
+      const isManual = !manualWrap.classList.contains("hidden");
+      setManualMode(!isManual);
+    });
 
     function renderResults(query) {
       const normQuery = normalizeText(query.trim());

@@ -1,29 +1,24 @@
 # Resgate BB — Gerador de Formulário de Resgate (Depósito Judicial / Precatório)
 
+**README e comentários gerados (na maior parte) por IA**
+
 Ferramenta web que coleta os dados de uma solicitação de resgate de depósito
 judicial/precatório e exporta o `formulario.pdf` do Banco do Brasil já
-preenchido, incluindo, quando aplicável, a Declaração de Isenção de Imposto
+preenchido — incluindo, quando aplicável, a Declaração de Isenção de Imposto
 de Renda (modelo IN SRF nº 491/2005) anexada ao final do PDF.
 
 ## Como funciona
 
 1. O usuário preenche um formulário web em etapas (wizard) com campos
    condicionais:
+
    - Beneficiário preenche sozinho, ou procurador/representante legal
      preenche em nome dele (nesse caso os dados do representante também são
      coletados).
    - Forma de recebimento: crédito em conta do beneficiário, crédito em
      conta do representante legal, divisão do valor entre as duas contas
      (usando as opções "Parcial R$/%" já previstas em cada bloco do PDF
-     original), ou pagamento em espécie. Ao escolher crédito em conta, o
-     banco é selecionado por um campo de busca (código ou nome) que
-     preenche automaticamente "Banco — Nº" e "Banco — Nome"; os campos
-     continuam editáveis manualmente para bancos fora da lista.
-   - O titular de cada conta de crédito e o declarante da isenção de IR
-     não são perguntados de novo: são sempre o beneficiário/representante
-     legal já identificados no início do formulário (o próprio PDF do BB
-     veda crédito a terceiros, e quem recebe o rendimento isento é sempre
-     o beneficiário).
+     original), ou pagamento em espécie.
    - Se o tipo de depósito for **Precatório ou RPV Federal** e o
      beneficiário se declarar **isento de IR**, uma seção adicional coleta
      os dados da Declaração de Isenção (nome, CPF/CNPJ, endereço, processo,
@@ -31,6 +26,7 @@ de Renda (modelo IN SRF nº 491/2005) anexada ao final do PDF.
    - Campos de CPF/CNPJ e número de processo (padrão CNJ) são formatados
      automaticamente conforme o usuário digita.
 2. Ao enviar, o backend:
+
    - Valida os dados recebidos (a validação client-side é só uma
      conveniência; o servidor nunca confia apenas nela).
    - Preenche os campos do AcroForm do `formulario.pdf` original (nome,
@@ -70,9 +66,9 @@ resgate_bb/
     └── resgate-bb.service   # unit systemd
 ```
 
-## Deploy
+## Deploy 
 
-### 1. Copiar o projeto e instalar dependências
+1. Copiar o projeto e instalar dependências
 
 ```bash
 sudo mkdir -p /opt/resgate-bb
@@ -105,7 +101,7 @@ sudo systemctl status resgate-bb
 curl http://127.0.0.1:5051/healthz
 ```
 
-## Rodando localmente para testes
+### Rodando localmente para testes
 
 ```bash
 cd resgate_bb
@@ -118,13 +114,6 @@ Acesse http://localhost:5051
 
 ## TODO
 
-- **Preenchimento automático via ID Depósito / SISBAJUD**: está sendo
-  avaliada a viabilidade de um scraping do site do Banco do Brasil para,
-  a partir do ID Depósito (SISBAJUD), recuperar automaticamente os dados
-  do depósito judicial e pré-preencher o wizard.
-- **Coleta automática de dados processuais via API pública do PJe**: está
-  sendo avaliada a integração com a API pública do PJe para, a partir do
-  número do processo (padrão CNJ), preencher automaticamente campos
-  dados do beneficiário/procurador e número da conta judicial/ID
-- **Coleta automática de dados processuais via API pública do PJe:** atualização
-  da versão do formulário de resgate
+* **Preenchimento automático via ID Depósito / SISBAJUD** : está sendo avaliada a viabilidade de um scraping do site do Banco do Brasil para, a partir do ID Depósito (SISBAJUD), recuperar automaticamente os dados do depósito judicial e pré-preencher o wizard.
+* **Coleta automática de dados processuais via API pública do PJe** : está sendo avaliada a integração com a API pública do PJe para, a partir do número do processo (padrão CNJ), preencher automaticamente campos dados do beneficiário/procurador e número da conta judicial/ID
+* **Coleta automática de dados processuais via API pública do PJe:** atualização da versão do formulário de resgate

@@ -143,6 +143,18 @@ input:focus { outline: 2px solid var(--bb-blue); outline-offset: 1px; }
   background: #eef2fb;
 }
 
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: .4rem;
+  color: var(--bb-blue);
+  font-size: .82rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.link-btn:hover { color: #00215e; }
+
 .errors {
   background: var(--danger-bg);
   border: 1px solid #f1c2bd;
