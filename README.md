@@ -1,7 +1,4 @@
-
 # Resgate BB — Gerador de Formulário de Resgate (Depósito Judicial / Precatório)
-
-**README e comentários gerados (na maior parte) por IA**
 
 Ferramenta web que coleta os dados de uma solicitação de resgate de depósito
 judicial/precatório e exporta o `formulario.pdf` do Banco do Brasil já
@@ -12,14 +9,21 @@ de Renda (modelo IN SRF nº 491/2005) anexada ao final do PDF.
 
 1. O usuário preenche um formulário web em etapas (wizard) com campos
    condicionais:
-
    - Beneficiário preenche sozinho, ou procurador/representante legal
      preenche em nome dele (nesse caso os dados do representante também são
      coletados).
    - Forma de recebimento: crédito em conta do beneficiário, crédito em
      conta do representante legal, divisão do valor entre as duas contas
      (usando as opções "Parcial R$/%" já previstas em cada bloco do PDF
-     original), ou pagamento em espécie.
+     original), ou pagamento em espécie. Ao escolher crédito em conta, o
+     banco é selecionado por um campo de busca (código ou nome) que
+     preenche automaticamente "Banco — Nº" e "Banco — Nome"; os campos
+     continuam editáveis manualmente para bancos fora da lista.
+   - O titular de cada conta de crédito e o declarante da isenção de IR
+     não são perguntados de novo: são sempre o beneficiário/representante
+     legal já identificados no início do formulário (o próprio PDF do BB
+     veda crédito a terceiros, e quem recebe o rendimento isento é sempre
+     o beneficiário).
    - Se o tipo de depósito for **Precatório ou RPV Federal** e o
      beneficiário se declarar **isento de IR**, uma seção adicional coleta
      os dados da Declaração de Isenção (nome, CPF/CNPJ, endereço, processo,
@@ -27,7 +31,6 @@ de Renda (modelo IN SRF nº 491/2005) anexada ao final do PDF.
    - Campos de CPF/CNPJ e número de processo (padrão CNJ) são formatados
      automaticamente conforme o usuário digita.
 2. Ao enviar, o backend:
-
    - Valida os dados recebidos (a validação client-side é só uma
      conveniência; o servidor nunca confia apenas nela).
    - Preenche os campos do AcroForm do `formulario.pdf` original (nome,
@@ -67,9 +70,14 @@ resgate_bb/
     └── resgate-bb.service   # unit systemd
 ```
 
-## Deploy
+## Deploy na instância Oracle Cloud (Ubuntu, padrão `/opt/`)
 
-1. Copiar o projeto e instalar dependências
+Este projeto segue o mesmo padrão de deploy usado nos demais projetos
+Flask: `Flask + gunicorn + systemd`, rodando como usuário `ubuntu` em
+`/opt/`, na porta **5051** (distinta das demais: 3000, 5000, 5050 já estão
+em uso por outros projetos).
+
+### 1. Copiar o projeto e instalar dependências
 
 ```bash
 sudo mkdir -p /opt/resgate-bb
@@ -90,8 +98,6 @@ python3 -c "import secrets; print(secrets.token_hex(32))"
 Cole o resultado no lugar de `TROQUE_ESTA_CHAVE_EM_PRODUCAO` em
 `deploy/resgate-bb.service`.
 
-Obs.: A secret key AINDA não é usada, mas conforme o sistema evolui poderá ser usada para chave de sessão/cookie
-
 ### 3. Instalar o serviço systemd
 
 ```bash
@@ -102,7 +108,55 @@ sudo systemctl status resgate-bb
 curl http://127.0.0.1:5051/healthz
 ```
 
-### Rodando localmente para testes
+### 4. Liberar a porta 5051 no iptables (firewall do host)
+
+O Ubuntu da OCI vem com uma regra `REJECT` no fim da chain `INPUT`; a nova
+regra precisa entrar **antes** dela:
+
+```bash
+sudo iptables -L INPUT -n --line-numbers   # localize o nº da linha REJECT
+sudo iptables -I INPUT <N> -p tcp --dport 5051 -j ACCEPT
+```
+
+Tornar persistente (sobrevive a reboot):
+
+```bash
+sudo apt update
+sudo apt install -y iptables-persistent
+sudo netfilter-persistent save
+```
+
+### 5. Liberar a porta 5051 na Security List / NSG da OCI
+
+Essa é a camada de firewall da nuvem, separada do iptables do host — sem
+essa liberação, o tráfego externo é bloqueado antes de chegar na instância.
+Adicione uma regra de Ingress para `5051/tcp`, do mesmo jeito que já foi
+feito para as demais portas (3000, 5000, 5050).
+
+### 6. Nginx + HTTPS na frente
+
+Como o formulário trata CPF, dados bancários e dados de IR, é recomendável
+colocar um Nginx com Let's Encrypt/Certbot na frente do gunicorn antes de
+divulgar a URL:
+
+```nginx
+server {
+    listen 80;
+    server_name resgate.seudominio.com.br;
+    location / {
+        proxy_pass http://127.0.0.1:5051;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+```bash
+sudo certbot --nginx -d resgate.seudominio.com.br
+```
+
+## Rodando localmente para testes
 
 ```bash
 cd resgate_bb
@@ -115,6 +169,11 @@ Acesse http://localhost:5051
 
 ## TODO
 
-* **Preenchimento automático via ID Depósito / SISBAJUD** : está sendo avaliada a viabilidade de um scraping do site do Banco do Brasil para, a partir do ID Depósito (SISBAJUD), recuperar automaticamente os dados do depósito judicial e pré-preencher o wizard.
-* **Coleta automática de dados processuais via API pública do PJe** : está sendo avaliada a integração com a API pública do PJe para, a partir do número do processo (padrão CNJ), preencher automaticamente campos dados do beneficiário/procurador e número da conta judicial/ID
-* **Coleta automática de dados processuais via API pública do PJe:** atualização da versão do formulário de resgate
+- **Preenchimento automático via ID Depósito / SISBAJUD**: está sendo
+  avaliada a viabilidade de um scraping do site do Banco do Brasil para,
+  a partir do ID Depósito (SISBAJUD), recuperar automaticamente os dados
+  do depósito judicial e pré-preencher o wizard.
+- **Coleta automática de dados processuais via API pública do PJe**: está
+  sendo avaliada a integração com a API pública do PJe para, a partir do
+  número do processo (padrão CNJ), preencher automaticamente campos como
+  vara/seção judiciária, município e partes do processo.
