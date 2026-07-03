@@ -52,22 +52,31 @@ def build_formulario_values(
 
     # --- Identificação -----------------------------------------------------
     quem_preenche = payload.get("quem_preenche")
+    if quem_preenche not in ("beneficiario", "procurador"):
+        errors.append("Selecione quem está preenchendo o formulário.")
+
     benef = payload.get("beneficiario") or {}
     benef_nome = _req(benef, "nome", "Nome do beneficiário", errors)
     benef_cpf = _req(benef, "cpf_cnpj", "CPF/CNPJ do beneficiário", errors)
     values[fm.F_BENEF_NOME] = benef_nome
     values[fm.F_BENEF_CPF_CNPJ] = benef_cpf
 
+    # Um representante legal/procurador pode estar envolvido mesmo quando é
+    # o próprio beneficiário quem preenche o formulário (por exemplo, para
+    # receber parte do valor por rateio) — por isso essa condição é
+    # independente de "quem está preenchendo".
+    representante_envolvido = (
+        quem_preenche == "procurador" or payload.get("representante_envolvido") == "sim"
+    )
+
     rep_nome = ""
     rep_cpf = ""
-    if quem_preenche == "procurador":
+    if representante_envolvido:
         rep = payload.get("representante") or {}
         rep_nome = _req(rep, "nome", "Nome do representante legal/procurador", errors)
         rep_cpf = _req(rep, "cpf_cnpj", "CPF/CNPJ do representante legal/procurador", errors)
         values[fm.F_REP_NOME] = rep_nome
         values[fm.F_REP_CPF_CNPJ] = rep_cpf
-    elif quem_preenche != "beneficiario":
-        errors.append("Selecione quem está preenchendo o formulário.")
 
     # --- Tipo de depósito ----------------------------------------------------
     tipo_deposito = payload.get("tipo_deposito")
@@ -115,7 +124,7 @@ def build_formulario_values(
     else:
         values[forma_checkbox_map[forma]] = fm.CHECKED
 
-    if forma in ("credito_representante", "credito_dividido") and quem_preenche != "procurador":
+    if forma in ("credito_representante", "credito_dividido") and not representante_envolvido:
         errors.append(
             "Crédito para o representante legal (ou divisão entre beneficiário e "
             "representante) só pode ser escolhido quando há um representante "

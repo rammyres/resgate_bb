@@ -10,15 +10,20 @@ de Renda (modelo IN SRF nº 491/2005) anexada ao final do PDF.
 1. O usuário preenche um formulário web em etapas (wizard) com campos
    condicionais:
    - Beneficiário preenche sozinho, ou procurador/representante legal
-     preenche em nome dele (nesse caso os dados do representante também são
-     coletados).
+     preenche em nome dele. Independentemente de quem preenche, há uma
+     pergunta própria — "há um representante legal/procurador envolvido
+     nesta solicitação?" — que libera os dados do representante e as
+     opções de crédito para a conta dele, inclusive quando é o próprio
+     beneficiário quem está preenchendo o formulário (ex.: para dividir o
+     valor com o procurador).
    - Forma de recebimento: crédito em conta do beneficiário, crédito em
      conta do representante legal, divisão do valor entre as duas contas
      (usando as opções "Parcial R$/%" já previstas em cada bloco do PDF
      original), ou pagamento em espécie. Ao escolher crédito em conta, o
      banco é selecionado por um campo de busca (código ou nome) que
-     preenche automaticamente "Banco — Nº" e "Banco — Nome"; os campos
-     continuam editáveis manualmente para bancos fora da lista.
+     preenche automaticamente "Banco — Nº" e "Banco — Nome"; um link
+     permite alternar para preenchimento manual quando o banco não está
+     na lista.
    - O titular de cada conta de crédito e o declarante da isenção de IR
      não são perguntados de novo: são sempre o beneficiário/representante
      legal já identificados no início do formulário (o próprio PDF do BB

@@ -45,16 +45,24 @@
     </fieldset>
 
     <!-- 2b. Representante -->
-    <fieldset class="card hidden" id="bloco-representante">
+    <fieldset class="card" id="fieldset-representante">
       <legend>2.1. Representante legal / Procurador</legend>
-      <p class="hint">A procuração deve ter sido emitida há menos de 2 anos, com poderes específicos para receber e dar quitação. Para Precatório/RPV Federal por procuração, a Resolução 822/2023 do CJF exige procuração específica com o número da conta de depósito ou de registro de pagamento.</p>
-      <div class="grid-2">
-        <label>Nome completo
-          <input type="text" name="representante.nome">
+      <div class="radio-row" id="wrap-representante-toggle">
+        <label class="radio-option">
+          <input type="checkbox" id="chk-representante-envolvido" name="representante_envolvido" value="sim">
+          Há um representante legal/procurador envolvido nesta solicitação (mesmo que quem esteja preenchendo o formulário seja o próprio beneficiário) — necessário também caso o valor seja dividido entre as duas contas
         </label>
-        <label>CPF/CNPJ
-          <input type="text" name="representante.cpf_cnpj" inputmode="numeric" data-mask="cpf_cnpj" maxlength="18">
-        </label>
+      </div>
+      <div id="bloco-representante" class="hidden">
+        <p class="hint">A procuração deve ter sido emitida há menos de 2 anos, com poderes específicos para receber e dar quitação. Para Precatório/RPV Federal por procuração, a Resolução 822/2023 do CJF exige procuração específica com o número da conta de depósito ou de registro de pagamento.</p>
+        <div class="grid-2">
+          <label>Nome completo
+            <input type="text" name="representante.nome">
+          </label>
+          <label>CPF/CNPJ
+            <input type="text" name="representante.cpf_cnpj" inputmode="numeric" data-mask="cpf_cnpj" maxlength="18">
+          </label>
+        </div>
       </div>
     </fieldset>
 

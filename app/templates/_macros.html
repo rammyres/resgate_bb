@@ -1,10 +1,12 @@
 {% macro bloco_banco(prefix, titular_label) %}
   <div class="bank-combobox" data-bank-combobox>
-    <label>Buscar banco <span class="opt">(digite o código ou o nome)</span>
-      <input type="text" class="bank-search-input" autocomplete="off" placeholder="Ex.: 001 ou Banco do Brasil" data-bank-search>
-    </label>
-    <ul class="bank-dropdown hidden" data-bank-dropdown></ul>
-    <div class="grid-2">
+    <div data-bank-search-wrap>
+      <label>Banco <span class="opt">(digite o código ou o nome e selecione)</span>
+        <input type="text" class="bank-search-input" autocomplete="off" placeholder="Ex.: 001 ou Banco do Brasil" data-bank-search>
+      </label>
+      <ul class="bank-dropdown hidden" data-bank-dropdown></ul>
+    </div>
+    <div class="grid-2 hidden" data-bank-manual-wrap>
       <label>Banco — Nº
         <input type="text" name="{{ prefix }}.banco_num" placeholder="Ex.: 001" data-bank-num>
       </label>
@@ -12,7 +14,7 @@
         <input type="text" name="{{ prefix }}.banco_nome" placeholder="Ex.: Banco do Brasil S.A." data-bank-nome>
       </label>
     </div>
-    <p class="hint">Selecione um banco na busca acima para preencher automaticamente, ou edite os campos manualmente se o seu banco não estiver na lista.</p>
+    <button type="button" class="link-btn" data-bank-toggle>Meu banco não está na lista — preencher manualmente</button>
   </div>
   <div class="grid-2">
     <label>Agência

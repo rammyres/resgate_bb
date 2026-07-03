@@ -14,6 +14,8 @@
   function setVisible(el, visible) { visible ? show(el) : hide(el); }
 
   const blocoRepresentante = document.getElementById("bloco-representante");
+  const wrapRepresentanteToggle = document.getElementById("wrap-representante-toggle");
+  const chkRepresentanteEnvolvido = document.getElementById("chk-representante-envolvido");
   const opcaoCreditoRepresentante = document.getElementById("opcao-credito-representante");
   const opcaoCreditoDividido = document.getElementById("opcao-credito-dividido");
   const hintDividido = document.getElementById("hint-dividido");
@@ -31,13 +33,28 @@
     return el ? el.value : null;
   }
 
+  // Um representante legal/procurador pode estar envolvido mesmo quando é
+  // o próprio beneficiário quem preenche o formulário (ex.: para receber
+  // parte do valor por rateio) — por isso essa condição é independente de
+  // "quem está preenchendo".
+  function representanteEnvolvido() {
+    if (radioValue("quem_preenche") === "procurador") return true;
+    return chkRepresentanteEnvolvido.checked;
+  }
+
   function atualizarQuemPreenche() {
-    const v = radioValue("quem_preenche");
-    const isProcurador = v === "procurador";
-    setVisible(blocoRepresentante, isProcurador);
-    setVisible(opcaoCreditoRepresentante, isProcurador);
-    setVisible(opcaoCreditoDividido, isProcurador);
-    if (!isProcurador) {
+    const isProcurador = radioValue("quem_preenche") === "procurador";
+    setVisible(wrapRepresentanteToggle, !isProcurador);
+    if (isProcurador) chkRepresentanteEnvolvido.checked = true;
+    atualizarRepresentanteVisibility();
+  }
+
+  function atualizarRepresentanteVisibility() {
+    const envolvido = representanteEnvolvido();
+    setVisible(blocoRepresentante, envolvido);
+    setVisible(opcaoCreditoRepresentante, envolvido);
+    setVisible(opcaoCreditoDividido, envolvido);
+    if (!envolvido) {
       ["credito_representante", "credito_dividido"].forEach((val) => {
         const radio = form.querySelector(`input[name="forma_recebimento"][value="${val}"]`);
         if (radio && radio.checked) radio.checked = false;
@@ -82,6 +99,7 @@
   form.addEventListener("change", (ev) => {
     const name = ev.target.name;
     if (name === "quem_preenche") atualizarQuemPreenche();
+    if (name === "representante_envolvido") atualizarRepresentanteVisibility();
     if (name === "tipo_deposito") atualizarTipoDeposito();
     if (name === "forma_recebimento") atualizarFormaRecebimento();
     if (name === "ir.isento") atualizarIsencao();
@@ -161,7 +179,23 @@
     const dropdown = container.querySelector("[data-bank-dropdown]");
     const numInput = container.querySelector("[data-bank-num]");
     const nomeInput = container.querySelector("[data-bank-nome]");
+    const searchWrap = container.querySelector("[data-bank-search-wrap]");
+    const manualWrap = container.querySelector("[data-bank-manual-wrap]");
+    const toggleBtn = container.querySelector("[data-bank-toggle]");
     const bancos = window.BANCOS_BR || [];
+
+    function setManualMode(manual) {
+      setVisible(manualWrap, manual);
+      setVisible(searchWrap, !manual);
+      toggleBtn.textContent = manual
+        ? "Usar a busca de banco"
+        : "Meu banco não está na lista — preencher manualmente";
+    }
+    setManualMode(false);
+    toggleBtn.addEventListener("click", () => {
+      const isManual = !manualWrap.classList.contains("hidden");
+      setManualMode(!isManual);
+    });
 
     function renderResults(query) {
       const normQuery = normalizeText(query.trim());
