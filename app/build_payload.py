@@ -161,11 +161,19 @@ def build_formulario_values(
             values[F["valor_fixo_ck"]] = fm.CHECKED
             values[F["valor_fixo_rs"]] = _req(dados, "valor_fixo", f"Valor fixo (R$) — {prefixo_label}", errors)
         elif valor_opcao == "parcial":
-            values[F["valor_parcial_ck"]] = fm.CHECKED
-            values[F["valor_parcial_rs"]] = dados.get("valor_parcial", "").strip()
-            values[F["valor_percentual"]] = dados.get("percentual", "").strip()
-            if not values[F["valor_parcial_rs"]] and not values[F["valor_percentual"]]:
+            # O PDF tem checkboxes distintos para "Parcial R$" e
+            # "Percentual %" — marcamos cada um conforme o dado informado
+            # (podem ser preenchidos os dois, se o usuário quiser).
+            valor_parcial_rs = dados.get("valor_parcial", "").strip()
+            percentual = dados.get("percentual", "").strip()
+            if not valor_parcial_rs and not percentual:
                 errors.append(f"Informe o valor parcial (R$) ou o percentual — {prefixo_label}")
+            if valor_parcial_rs:
+                values[F["valor_parcial_ck"]] = fm.CHECKED
+                values[F["valor_parcial_rs"]] = valor_parcial_rs
+            if percentual:
+                values[F["valor_percentual_ck"]] = fm.CHECKED
+                values[F["valor_percentual"]] = percentual
         else:
             errors.append(f"Selecione a opção de valor a resgatar — {prefixo_label}")
 
@@ -180,7 +188,7 @@ def build_formulario_values(
             valor_total=fm.F_BENEF_VALOR_TOTAL, valor_saldo_remanescente=fm.F_BENEF_VALOR_SALDO_REMANESCENTE,
             valor_fixo_ck=fm.F_BENEF_VALOR_FIXO_CK, valor_fixo_rs=fm.F_BENEF_VALOR_FIXO_RS,
             valor_parcial_ck=fm.F_BENEF_VALOR_PARCIAL_CK, valor_parcial_rs=fm.F_BENEF_VALOR_PARCIAL_RS,
-            valor_percentual=fm.F_BENEF_VALOR_PERCENTUAL,
+            valor_percentual_ck=fm.F_BENEF_VALOR_PERCENTUAL_CK, valor_percentual=fm.F_BENEF_VALOR_PERCENTUAL,
         )
         preencher_bloco_credito(dados, "dados bancários do beneficiário", F, benef_nome, benef_cpf)
 
@@ -195,7 +203,7 @@ def build_formulario_values(
             valor_total=fm.F_REP_VALOR_TOTAL, valor_saldo_remanescente=fm.F_REP_VALOR_SALDO_REMANESCENTE,
             valor_fixo_ck=fm.F_REP_VALOR_FIXO_CK, valor_fixo_rs=fm.F_REP_VALOR_FIXO_RS,
             valor_parcial_ck=fm.F_REP_VALOR_PARCIAL_CK, valor_parcial_rs=fm.F_REP_VALOR_PARCIAL_RS,
-            valor_percentual=fm.F_REP_VALOR_PERCENTUAL,
+            valor_percentual_ck=fm.F_REP_VALOR_PERCENTUAL_CK, valor_percentual=fm.F_REP_VALOR_PERCENTUAL,
         )
         preencher_bloco_credito(dados, "dados bancários do representante legal", F, rep_nome, rep_cpf)
 
@@ -266,23 +274,49 @@ def build_formulario_values(
     if resposta == "sim":
         values[fm.F_ANALFABETO_SIM] = fm.CHECKED
         modo = analf.get("modo")
-        if modo == "rogo":
+        if modo == "testemunhas":
+            # O PDF atual já traz campos preenchíveis para as duas
+            # testemunhas (antes eram apenas linhas para assinatura à mão).
+            test = analf.get("testemunhas") or {}
+            values[fm.F_TESTEMUNHA1_NOME] = _req(test, "testemunha1_nome", "Nome da 1ª testemunha", errors)
+            values[fm.F_TESTEMUNHA1_CPF] = _req(test, "testemunha1_cpf", "CPF da 1ª testemunha", errors)
+            values[fm.F_TESTEMUNHA2_NOME] = _req(test, "testemunha2_nome", "Nome da 2ª testemunha", errors)
+            values[fm.F_TESTEMUNHA2_CPF] = _req(test, "testemunha2_cpf", "CPF da 2ª testemunha", errors)
+        elif modo == "rogo":
             rogo = analf.get("rogo") or {}
-            values[fm.F_ROGO_SIGNER_NOME] = _req(rogo, "signer_nome", "Nome de quem assina a rogo", errors)
+            signer_nome = _req(rogo, "signer_nome", "Nome de quem assina a rogo", errors)
+            signer_cpf = _req(rogo, "signer_cpf", "CPF de quem assina a rogo", errors)
+            values[fm.F_ROGO_SIGNER_NOME] = signer_nome
             values[fm.F_ROGO_SIGNER_RG_NUM] = _req(rogo, "signer_rg_num", "RG de quem assina a rogo", errors)
             values[fm.F_ROGO_SIGNER_RG_ORGAO] = rogo.get("signer_rg_orgao", "").strip()
             values[fm.F_ROGO_SIGNER_RG_DATA] = rogo.get("signer_rg_data", "").strip()
-            values[fm.F_ROGO_SIGNER_CPF] = _req(rogo, "signer_cpf", "CPF de quem assina a rogo", errors)
+            values[fm.F_ROGO_SIGNER_CPF] = signer_cpf
             values[fm.F_ROGO_BENEF_NOME] = _req(rogo, "benef_nome", "Nome do beneficiário analfabeto", errors)
             values[fm.F_ROGO_BENEF_RG_NUM] = _req(rogo, "benef_rg_num", "RG do beneficiário analfabeto", errors)
             values[fm.F_ROGO_BENEF_RG_ORGAO] = rogo.get("benef_rg_orgao", "").strip()
             values[fm.F_ROGO_BENEF_RG_DATA] = rogo.get("benef_rg_data", "").strip()
             values[fm.F_ROGO_ALVARA_NUM] = _req(rogo, "alvara_num", "Número do Alvará Judicial", errors)
-        elif modo != "testemunhas":
+            # Nome/CPF impressos sob a linha de assinatura = os mesmos de
+            # quem assina a rogo (não pedidos de novo).
+            values[fm.F_ROGO_SIGNER_PRINTED_NOME] = signer_nome
+            values[fm.F_ROGO_SIGNER_PRINTED_CPF] = signer_cpf
+            # Testemunhas do termo "a rogo" — o PDF pede duas, distintas
+            # das testemunhas do método direto.
+            rogo_test = rogo.get("testemunhas") or {}
+            values[fm.F_ROGO_TESTEMUNHA1_NOME] = _req(
+                rogo_test, "testemunha1_nome", "Nome da 1ª testemunha (termo a rogo)", errors
+            )
+            values[fm.F_ROGO_TESTEMUNHA1_CPF] = _req(
+                rogo_test, "testemunha1_cpf", "CPF da 1ª testemunha (termo a rogo)", errors
+            )
+            values[fm.F_ROGO_TESTEMUNHA2_NOME] = _req(
+                rogo_test, "testemunha2_nome", "Nome da 2ª testemunha (termo a rogo)", errors
+            )
+            values[fm.F_ROGO_TESTEMUNHA2_CPF] = _req(
+                rogo_test, "testemunha2_cpf", "CPF da 2ª testemunha (termo a rogo)", errors
+            )
+        else:
             errors.append("Selecione como será assinado o levantamento (testemunhas ou termo a rogo).")
-        # Quando modo == "testemunhas", os nomes/CPFs são preenchidos à mão
-        # no documento impresso (não há campos de formulário no PDF para
-        # essa seção; apenas linhas para assinatura manuscrita).
     elif resposta == "nao":
         values[fm.F_ANALFABETO_NAO] = fm.CHECKED
     else:

@@ -27,6 +27,7 @@
   const blocoValorIsencao = document.getElementById("bloco-valor-isencao");
   const blocoAnalfabeto = document.getElementById("bloco-analfabeto");
   const blocoRogo = document.getElementById("bloco-rogo");
+  const blocoTestemunhasDiretas = document.getElementById("bloco-testemunhas-diretas");
 
   function radioValue(name) {
     const el = form.querySelector(`input[name="${name}"]:checked`);
@@ -94,6 +95,7 @@
   function atualizarModoAnalfabeto() {
     const v = radioValue("analfabeto.modo");
     setVisible(blocoRogo, v === "rogo");
+    setVisible(blocoTestemunhasDiretas, v === "testemunhas");
   }
 
   form.addEventListener("change", (ev) => {

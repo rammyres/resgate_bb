@@ -1,3 +1,4 @@
+
 # Resgate BB — Gerador de Formulário de Resgate (Depósito Judicial / Precatório)
 
 ## (README.md e comentários do código gerados por IA)
@@ -127,6 +128,5 @@ Acesse http://localhost:5051
   sendo avaliada a integração com a API pública do PJe para, a partir do
   número do processo (padrão CNJ), preencher automaticamente campos como
   vara/seção judiciária, município e partes do processo.
-- **Atualização da versão do formulário de resgate**
 
  

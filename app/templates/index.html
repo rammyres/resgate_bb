@@ -179,8 +179,28 @@
 
       <div id="bloco-analfabeto" class="sub-card hidden">
         <div class="radio-row">
-          <label class="radio-option"><input type="radio" name="analfabeto.modo" value="testemunhas" checked> Assinatura com duas testemunhas (preenchido à mão no documento)</label>
-          <label class="radio-option"><input type="radio" name="analfabeto.modo" value="rogo"> Termo de quitação "a rogo" (assinado por um procurador/terceiro)</label>
+          <label class="radio-option"><input type="radio" name="analfabeto.modo" value="testemunhas" checked> Assinatura com duas testemunhas</label>
+          <label class="radio-option"><input type="radio" name="analfabeto.modo" value="rogo"> Assinatura "a rogo" (assinado por um terceiro)</label>
+        </div>
+
+        <div id="bloco-testemunhas-diretas" class="sub-card">
+          <p class="hint">Nome e CPF de duas testemunhas que não sejam funcionários do Banco:</p>
+          <div class="grid-2">
+            <label>Nome da 1ª testemunha
+              <input type="text" name="analfabeto.testemunhas.testemunha1_nome">
+            </label>
+            <label>CPF da 1ª testemunha
+              <input type="text" name="analfabeto.testemunhas.testemunha1_cpf" data-mask="cpf_cnpj" maxlength="18">
+            </label>
+          </div>
+          <div class="grid-2">
+            <label>Nome da 2ª testemunha
+              <input type="text" name="analfabeto.testemunhas.testemunha2_nome">
+            </label>
+            <label>CPF da 2ª testemunha
+              <input type="text" name="analfabeto.testemunhas.testemunha2_cpf" data-mask="cpf_cnpj" maxlength="18">
+            </label>
+          </div>
         </div>
 
         <div id="bloco-rogo" class="sub-card hidden">
@@ -223,6 +243,24 @@
           <label>Número do Alvará Judicial
             <input type="text" name="analfabeto.rogo.alvara_num" placeholder="AAAA/SSSSSSSSS">
           </label>
+
+          <p class="hint">Nome e CPF de duas testemunhas do termo (distintas das testemunhas acima):</p>
+          <div class="grid-2">
+            <label>Nome da 1ª testemunha
+              <input type="text" name="analfabeto.rogo.testemunhas.testemunha1_nome">
+            </label>
+            <label>CPF da 1ª testemunha
+              <input type="text" name="analfabeto.rogo.testemunhas.testemunha1_cpf" data-mask="cpf_cnpj" maxlength="18">
+            </label>
+          </div>
+          <div class="grid-2">
+            <label>Nome da 2ª testemunha
+              <input type="text" name="analfabeto.rogo.testemunhas.testemunha2_nome">
+            </label>
+            <label>CPF da 2ª testemunha
+              <input type="text" name="analfabeto.rogo.testemunhas.testemunha2_cpf" data-mask="cpf_cnpj" maxlength="18">
+            </label>
+          </div>
         </div>
       </div>
     </fieldset>
