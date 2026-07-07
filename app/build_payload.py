@@ -246,14 +246,20 @@ def build_formulario_values(
                         errors.append("Valor a receber (declaração de isenção) inválido.")
                         valor_decl = None
 
-            data_str = decl.get("data", "").strip()
+            # O local e a data da assinatura da declaração são os mesmos já
+            # informados em "Local e Data" no final do formulário principal
+            # (não são pedidos de novo, e não devem ser confundidos com o
+            # município do processo, usado só no corpo do texto).
+            local_data_payload = payload.get("local_data") or {}
+            local_assinatura = local_data_payload.get("local", "").strip()
+            data_str = local_data_payload.get("data", "").strip()
             data_decl = None
             if data_str:
                 try:
                     data_decl = date.fromisoformat(data_str)
                 except ValueError:
-                    errors.append("Data da declaração de isenção inválida.")
-            else:
+                    pass  # erro já será reportado na validação de "Local e Data" mais abaixo
+            if not data_decl:
                 data_decl = date.today()
 
             declaracao_dados = DadosDeclaracao(
@@ -264,6 +270,7 @@ def build_formulario_values(
                 vara=vara_decl,
                 municipio=municipio_decl,
                 tipo=tipo_decl,
+                local_assinatura=local_assinatura,
                 valor=valor_decl,
                 data=data_decl,
             )
@@ -276,12 +283,15 @@ def build_formulario_values(
         modo = analf.get("modo")
         if modo == "testemunhas":
             # O PDF atual já traz campos preenchíveis para as duas
-            # testemunhas (antes eram apenas linhas para assinatura à mão).
+            # testemunhas (antes eram apenas linhas para assinatura à
+            # mão). Mesmo assim, o preenchimento continua opcional aqui —
+            # quem preferir pode simplesmente assinar à mão no documento
+            # impresso, como já era possível antes.
             test = analf.get("testemunhas") or {}
-            values[fm.F_TESTEMUNHA1_NOME] = _req(test, "testemunha1_nome", "Nome da 1ª testemunha", errors)
-            values[fm.F_TESTEMUNHA1_CPF] = _req(test, "testemunha1_cpf", "CPF da 1ª testemunha", errors)
-            values[fm.F_TESTEMUNHA2_NOME] = _req(test, "testemunha2_nome", "Nome da 2ª testemunha", errors)
-            values[fm.F_TESTEMUNHA2_CPF] = _req(test, "testemunha2_cpf", "CPF da 2ª testemunha", errors)
+            values[fm.F_TESTEMUNHA1_NOME] = test.get("testemunha1_nome", "").strip()
+            values[fm.F_TESTEMUNHA1_CPF] = test.get("testemunha1_cpf", "").strip()
+            values[fm.F_TESTEMUNHA2_NOME] = test.get("testemunha2_nome", "").strip()
+            values[fm.F_TESTEMUNHA2_CPF] = test.get("testemunha2_cpf", "").strip()
         elif modo == "rogo":
             rogo = analf.get("rogo") or {}
             signer_nome = _req(rogo, "signer_nome", "Nome de quem assina a rogo", errors)
@@ -301,20 +311,13 @@ def build_formulario_values(
             values[fm.F_ROGO_SIGNER_PRINTED_NOME] = signer_nome
             values[fm.F_ROGO_SIGNER_PRINTED_CPF] = signer_cpf
             # Testemunhas do termo "a rogo" — o PDF pede duas, distintas
-            # das testemunhas do método direto.
+            # das testemunhas do método direto, mas também opcionais aqui
+            # (podem ser preenchidas à mão no documento impresso).
             rogo_test = rogo.get("testemunhas") or {}
-            values[fm.F_ROGO_TESTEMUNHA1_NOME] = _req(
-                rogo_test, "testemunha1_nome", "Nome da 1ª testemunha (termo a rogo)", errors
-            )
-            values[fm.F_ROGO_TESTEMUNHA1_CPF] = _req(
-                rogo_test, "testemunha1_cpf", "CPF da 1ª testemunha (termo a rogo)", errors
-            )
-            values[fm.F_ROGO_TESTEMUNHA2_NOME] = _req(
-                rogo_test, "testemunha2_nome", "Nome da 2ª testemunha (termo a rogo)", errors
-            )
-            values[fm.F_ROGO_TESTEMUNHA2_CPF] = _req(
-                rogo_test, "testemunha2_cpf", "CPF da 2ª testemunha (termo a rogo)", errors
-            )
+            values[fm.F_ROGO_TESTEMUNHA1_NOME] = rogo_test.get("testemunha1_nome", "").strip()
+            values[fm.F_ROGO_TESTEMUNHA1_CPF] = rogo_test.get("testemunha1_cpf", "").strip()
+            values[fm.F_ROGO_TESTEMUNHA2_NOME] = rogo_test.get("testemunha2_nome", "").strip()
+            values[fm.F_ROGO_TESTEMUNHA2_CPF] = rogo_test.get("testemunha2_cpf", "").strip()
         else:
             errors.append("Selecione como será assinado o levantamento (testemunhas ou termo a rogo).")
     elif resposta == "nao":

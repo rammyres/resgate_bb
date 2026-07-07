@@ -50,7 +50,7 @@
       <div class="radio-row" id="wrap-representante-toggle">
         <label class="radio-option">
           <input type="checkbox" id="chk-representante-envolvido" name="representante_envolvido" value="sim">
-          Haverá rateio dos valores (entre beneficiário e advogado, por exemplo)?
+          Há um representante legal/procurador envolvido nesta solicitação (mesmo que quem esteja preenchendo o formulário seja o próprio beneficiário) — necessário também caso o valor seja dividido entre as duas contas
         </label>
       </div>
       <div id="bloco-representante" class="hidden">
@@ -100,7 +100,7 @@
         <label class="radio-option"><input type="radio" name="forma_recebimento" value="convenio_djc"> Convênio de resgate centralizado – DJC</label>
         <label class="radio-option"><input type="radio" name="forma_recebimento" value="credito_beneficiario"> Crédito em Conta BB ou TED para o BENEFICIÁRIO</label>
         <label class="radio-option hidden" id="opcao-credito-representante"><input type="radio" name="forma_recebimento" value="credito_representante"> Crédito em Conta BB ou TED para o REPRESENTANTE LEGAL</label>
-        <label class="radio-option hidden" id="opcao-credito-dividido"><input type="radio" name="forma_recebimento" value="credito_dividido"> Dividir entre BENEFICIÁRIO e REPRESENTANTE LEGAL</label>
+        <label class="radio-option hidden" id="opcao-credito-dividido"><input type="radio" name="forma_recebimento" value="credito_dividido"> Dividir entre a conta do BENEFICIÁRIO e a do REPRESENTANTE LEGAL</label>
         <label class="radio-option"><input type="radio" name="forma_recebimento" value="especie"> Pagamento em espécie em qualquer agência da UF de jurisdição do Tribunal</label>
       </div>
 
@@ -158,14 +158,12 @@
             <input type="text" name="ir.declaracao.municipio" placeholder="Cidade – UF">
           </label>
         </div>
-        <div id="bloco-valor-isencao" class="grid-2">
+        <div id="bloco-valor-isencao">
           <label>Valor a receber (R$)
             <input type="text" name="ir.declaracao.valor" placeholder="14.500,26">
           </label>
-          <label>Data da declaração
-            <input type="date" name="ir.declaracao.data">
-          </label>
         </div>
+        <p class="hint">O local e a data da assinatura da declaração serão os mesmos informados em "Local e Data" no final deste formulário.</p>
       </div>
     </fieldset>
 
@@ -180,11 +178,11 @@
       <div id="bloco-analfabeto" class="sub-card hidden">
         <div class="radio-row">
           <label class="radio-option"><input type="radio" name="analfabeto.modo" value="testemunhas" checked> Assinatura com duas testemunhas</label>
-          <label class="radio-option"><input type="radio" name="analfabeto.modo" value="rogo"> Assinatura "a rogo" (assinado por um terceiro)</label>
+          <label class="radio-option"><input type="radio" name="analfabeto.modo" value="rogo"> Assinatura "a rogo" (assinado terceiro não procurador)</label>
         </div>
 
         <div id="bloco-testemunhas-diretas" class="sub-card">
-          <p class="hint">Nome e CPF de duas testemunhas que não sejam funcionários do Banco:</p>
+          <p class="hint">Nome e CPF de duas testemunhas que não sejam funcionários do Banco <span class="opt">(opcional — se preferir, pode deixar em branco e preencher à mão no documento impresso)</span>:</p>
           <div class="grid-2">
             <label>Nome da 1ª testemunha
               <input type="text" name="analfabeto.testemunhas.testemunha1_nome">
@@ -244,7 +242,7 @@
             <input type="text" name="analfabeto.rogo.alvara_num" placeholder="AAAA/SSSSSSSSS">
           </label>
 
-          <p class="hint">Nome e CPF de duas testemunhas do termo (distintas das testemunhas acima):</p>
+          <p class="hint">Nome e CPF de duas testemunhas do termo (distintas das testemunhas acima) <span class="opt">(opcional — pode deixar em branco e preencher à mão)</span>:</p>
           <div class="grid-2">
             <label>Nome da 1ª testemunha
               <input type="text" name="analfabeto.rogo.testemunhas.testemunha1_nome">

@@ -30,6 +30,7 @@ class DadosDeclaracao:
     vara: str
     municipio: str
     tipo: str  # "isento" ou "simples"
+    local_assinatura: str  # local da assinatura (reaproveitado do "Local e Data" do formulário principal, não é o município do processo)
     valor: str | None = None  # string "14500.26" (ponto decimal)
     data: date | None = None
 
@@ -131,7 +132,7 @@ def gerar_declaracao_pdf(dados: DadosDeclaracao) -> bytes:
 
     story.append(Spacer(1, 1 * cm))
     d = dados.data or date.today()
-    local_data = f"{dados.municipio}, {data_por_extenso(d)}"
+    local_data = f"{dados.local_assinatura}, {data_por_extenso(d)}"
     story.append(Paragraph(local_data, body_style))
 
     story.append(Spacer(1, 2 * cm))

@@ -1,7 +1,4 @@
-
 # Resgate BB — Gerador de Formulário de Resgate (Depósito Judicial / Precatório)
-
-## (README.md e comentários do código gerados por IA)
 
 Ferramenta web que coleta os dados de uma solicitação de resgate de depósito
 judicial/precatório e exporta o `formulario.pdf` do Banco do Brasil já
@@ -12,7 +9,6 @@ de Renda (modelo IN SRF nº 491/2005) anexada ao final do PDF.
 
 1. O usuário preenche um formulário web em etapas (wizard) com campos
    condicionais:
-
    - Beneficiário preenche sozinho, ou procurador/representante legal
      preenche em nome dele. Independentemente de quem preenche, há uma
      pergunta própria — "há um representante legal/procurador envolvido
@@ -23,13 +19,29 @@ de Renda (modelo IN SRF nº 491/2005) anexada ao final do PDF.
    - Forma de recebimento: crédito em conta do beneficiário, crédito em
      conta do representante legal, divisão do valor entre as duas contas
      (usando as opções "Parcial R$/%" já previstas em cada bloco do PDF
-     original), ou pagamento em espécie.
+     original), ou pagamento em espécie. Ao escolher crédito em conta, o
+     banco é selecionado por um campo de busca (código ou nome) que
+     preenche automaticamente "Banco — Nº" e "Banco — Nome"; um link
+     permite alternar para preenchimento manual quando o banco não está
+     na lista.
+   - O titular de cada conta de crédito e o declarante da isenção de IR
+     não são perguntados de novo: são sempre o beneficiário/representante
+     legal já identificados no início do formulário (o próprio PDF do BB
+     veda crédito a terceiros, e quem recebe o rendimento isento é sempre
+     o beneficiário).
    - Se o tipo de depósito for **Precatório ou RPV Federal** e o
      beneficiário se declarar **isento de IR**, uma seção adicional coleta
      os dados da Declaração de Isenção (nome, CPF/CNPJ, endereço, processo,
      vara, município, valor, data).
+   - Beneficiário analfabeto: assinatura com duas testemunhas (nome/CPF
+     preenchidos diretamente no PDF, campos que a versão atual do
+     formulário do BB já disponibiliza) ou termo de quitação "a rogo" —
+     nesse caso o nome/CPF de quem assina são reaproveitados
+     automaticamente para o campo impresso sob a assinatura, e o termo
+     exige duas testemunhas próprias, distintas das do método direto.
+   - Campos de CPF/CNPJ e número de processo (padrão CNJ) são formatados
+     automaticamente conforme o usuário digita.
 2. Ao enviar, o backend:
-
    - Valida os dados recebidos (a validação client-side é só uma
      conveniência; o servidor nunca confia apenas nela).
    - Preenche os campos do AcroForm do `formulario.pdf` original (nome,
@@ -107,6 +119,54 @@ sudo systemctl status resgate-bb
 curl http://127.0.0.1:5051/healthz
 ```
 
+### 4. Liberar a porta 5051 no iptables (firewall do host)
+
+O Ubuntu da OCI vem com uma regra `REJECT` no fim da chain `INPUT`; a nova
+regra precisa entrar **antes** dela:
+
+```bash
+sudo iptables -L INPUT -n --line-numbers   # localize o nº da linha REJECT
+sudo iptables -I INPUT <N> -p tcp --dport 5051 -j ACCEPT
+```
+
+Tornar persistente (sobrevive a reboot):
+
+```bash
+sudo apt update
+sudo apt install -y iptables-persistent
+sudo netfilter-persistent save
+```
+
+### 5. Liberar a porta 5051 na Security List / NSG da OCI
+
+Essa é a camada de firewall da nuvem, separada do iptables do host — sem
+essa liberação, o tráfego externo é bloqueado antes de chegar na instância.
+Adicione uma regra de Ingress para `5051/tcp`, do mesmo jeito que já foi
+feito para as demais portas (3000, 5000, 5050).
+
+### 6. Nginx + HTTPS na frente
+
+Como o formulário trata CPF, dados bancários e dados de IR, é recomendável
+colocar um Nginx com Let's Encrypt/Certbot na frente do gunicorn antes de
+divulgar a URL:
+
+```nginx
+server {
+    listen 80;
+    server_name resgate.seudominio.com.br;
+    location / {
+        proxy_pass http://127.0.0.1:5051;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+```bash
+sudo certbot --nginx -d resgate.seudominio.com.br
+```
+
 ## Rodando localmente para testes
 
 ```bash
@@ -128,5 +188,3 @@ Acesse http://localhost:5051
   sendo avaliada a integração com a API pública do PJe para, a partir do
   número do processo (padrão CNJ), preencher automaticamente campos como
   vara/seção judiciária, município e partes do processo.
-
- 
