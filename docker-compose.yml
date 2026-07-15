@@ -1,0 +1,9 @@
+services:
+  resgate-bb:
+    build: .
+    container_name: resgate-bb
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5051:5051"   # mantém só localhost; Nginx/Caddy expõe pra fora
+    environment:
+      - SECRET_KEY=${SECRET_KEY}   # gerado com: python3 -c "import secrets; print(secrets.token_hex(32))"
