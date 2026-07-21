@@ -47,6 +47,49 @@
     <!-- 2b. Representante -->
     <fieldset class="card" id="fieldset-representante">
       <legend>2.1. Representante legal / Procurador</legend>
+
+      <div id="wrap-pj-multiplos" class="hidden">
+        <p class="hint">O beneficiário informado acima é uma pessoa jurídica (CNPJ).</p>
+        <div class="radio-row">
+          <label class="radio-option"><input type="radio" name="beneficiario_pj_multiplos_assinantes" value="nao" checked> A assinatura é de uma única pessoa</label>
+          <label class="radio-option"><input type="radio" name="beneficiario_pj_multiplos_assinantes" value="sim"> Precisa de assinatura de mais de uma pessoa (ex.: presidente e tesoureiro)</label>
+        </div>
+
+        <div id="bloco-pj-quantidade" class="hidden sub-card">
+          <label>Quantas pessoas precisam assinar?
+            <div class="radio-row">
+              <label class="radio-option"><input type="radio" name="beneficiario_pj_qtd_assinantes" value="2" checked> 2</label>
+              <label class="radio-option"><input type="radio" name="beneficiario_pj_qtd_assinantes" value="3"> 3</label>
+            </div>
+          </label>
+          <p class="hint">Os nomes e CPFs serão inseridos em ordem no campo "Representante Legal" do formulário.</p>
+          <div class="grid-2">
+            <label>Nome do 1º assinante
+              <input type="text" name="beneficiario_pj_assinantes.0.nome">
+            </label>
+            <label>CPF do 1º assinante
+              <input type="text" name="beneficiario_pj_assinantes.0.cpf" inputmode="numeric" data-mask="cpf_cnpj" maxlength="18">
+            </label>
+          </div>
+          <div class="grid-2">
+            <label>Nome do 2º assinante
+              <input type="text" name="beneficiario_pj_assinantes.1.nome">
+            </label>
+            <label>CPF do 2º assinante
+              <input type="text" name="beneficiario_pj_assinantes.1.cpf" inputmode="numeric" data-mask="cpf_cnpj" maxlength="18">
+            </label>
+          </div>
+          <div class="grid-2 hidden" id="bloco-pj-assinante-3">
+            <label>Nome do 3º assinante
+              <input type="text" name="beneficiario_pj_assinantes.2.nome">
+            </label>
+            <label>CPF do 3º assinante
+              <input type="text" name="beneficiario_pj_assinantes.2.cpf" inputmode="numeric" data-mask="cpf_cnpj" maxlength="18">
+            </label>
+          </div>
+        </div>
+      </div>
+
       <div class="radio-row" id="wrap-representante-toggle">
         <label class="radio-option">
           <input type="checkbox" id="chk-representante-envolvido" name="representante_envolvido" value="sim">
@@ -54,7 +97,7 @@
         </label>
       </div>
       <div id="bloco-representante" class="hidden">
-        <p class="hint">Procurações <i>ad judicia</i> devem ser as existentes nos autos, além de estarem acompanhadas de certidão de atuação/militância ou de objeto-e-pé.</p>
+        <p class="hint">A procuração deve ter sido emitida há menos de 2 anos, com poderes específicos para receber e dar quitação. Para Precatório/RPV Federal por procuração, a Resolução 822/2023 do CJF exige procuração específica com o número da conta de depósito ou de registro de pagamento.</p>
         <div class="grid-2">
           <label>Nome completo
             <input type="text" name="representante.nome">
@@ -177,8 +220,8 @@
 
       <div id="bloco-analfabeto" class="sub-card hidden">
         <div class="radio-row">
-          <label class="radio-option"><input type="radio" name="analfabeto.modo" value="testemunhas" checked> Imposição da digital </label>
-          <label class="radio-option"><input type="radio" name="analfabeto.modo" value="rogo"> Assinatura "a rogo" (assinado terceiro não procurador)</label>
+          <label class="radio-option"><input type="radio" name="analfabeto.modo" value="testemunhas" checked> Assinatura com duas testemunhas</label>
+          <label class="radio-option"><input type="radio" name="analfabeto.modo" value="rogo"> Termo de quitação "a rogo" (assinado por um procurador/terceiro)</label>
         </div>
 
         <div id="bloco-testemunhas-diretas" class="sub-card">
@@ -242,7 +285,7 @@
             <input type="text" name="analfabeto.rogo.alvara_num" placeholder="AAAA/SSSSSSSSS">
           </label>
 
-          <p class="hint">Nome e CPF de duas testemunhas do termo <span class="opt">(opcional — pode deixar em branco e preencher à mão)</span>:</p>
+          <p class="hint">Nome e CPF de duas testemunhas do termo (distintas das testemunhas acima) <span class="opt">(opcional — pode deixar em branco e preencher à mão)</span>:</p>
           <div class="grid-2">
             <label>Nome da 1ª testemunha
               <input type="text" name="analfabeto.rogo.testemunhas.testemunha1_nome">

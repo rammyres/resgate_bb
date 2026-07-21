@@ -16,6 +16,9 @@
   const blocoRepresentante = document.getElementById("bloco-representante");
   const wrapRepresentanteToggle = document.getElementById("wrap-representante-toggle");
   const chkRepresentanteEnvolvido = document.getElementById("chk-representante-envolvido");
+  const wrapPjMultiplos = document.getElementById("wrap-pj-multiplos");
+  const blocoPjQuantidade = document.getElementById("bloco-pj-quantidade");
+  const blocoPjAssinante3 = document.getElementById("bloco-pj-assinante-3");
   const opcaoCreditoRepresentante = document.getElementById("opcao-credito-representante");
   const opcaoCreditoDividido = document.getElementById("opcao-credito-dividido");
   const hintDividido = document.getElementById("hint-dividido");
@@ -34,25 +37,57 @@
     return el ? el.value : null;
   }
 
+  function pjMultiplosAtivo() {
+    return radioValue("beneficiario_pj_multiplos_assinantes") === "sim";
+  }
+
   // Um representante legal/procurador pode estar envolvido mesmo quando é
   // o próprio beneficiário quem preenche o formulário (ex.: para receber
   // parte do valor por rateio) — por isso essa condição é independente de
-  // "quem está preenchendo".
+  // "quem está preenchendo". A pessoa jurídica com múltiplos assinantes
+  // também conta como representante envolvido (os nomes/CPFs vão para o
+  // mesmo campo "Representante Legal" do PDF).
   function representanteEnvolvido() {
+    if (pjMultiplosAtivo()) return true;
     if (radioValue("quem_preenche") === "procurador") return true;
     return chkRepresentanteEnvolvido.checked;
   }
 
+  function atualizarBeneficiarioPJ() {
+    const cpfCnpjInput = form.querySelector('input[name="beneficiario.cpf_cnpj"]');
+    const digits = (cpfCnpjInput.value || "").replace(/\D/g, "");
+    const isCnpj = digits.length === 14;
+    setVisible(wrapPjMultiplos, isCnpj);
+    if (!isCnpj) {
+      const radioNao = form.querySelector('input[name="beneficiario_pj_multiplos_assinantes"][value="nao"]');
+      if (radioNao) radioNao.checked = true;
+    }
+    atualizarPjMultiplos();
+  }
+
+  function atualizarPjMultiplos() {
+    setVisible(blocoPjQuantidade, pjMultiplosAtivo());
+    atualizarPjQuantidade();
+    atualizarQuemPreenche();
+  }
+
+  function atualizarPjQuantidade() {
+    const qtd = radioValue("beneficiario_pj_qtd_assinantes") || "2";
+    setVisible(blocoPjAssinante3, qtd === "3");
+  }
+
   function atualizarQuemPreenche() {
     const isProcurador = radioValue("quem_preenche") === "procurador";
-    setVisible(wrapRepresentanteToggle, !isProcurador);
+    const multiplos = pjMultiplosAtivo();
+    setVisible(wrapRepresentanteToggle, !isProcurador && !multiplos);
     if (isProcurador) chkRepresentanteEnvolvido.checked = true;
     atualizarRepresentanteVisibility();
   }
 
   function atualizarRepresentanteVisibility() {
     const envolvido = representanteEnvolvido();
-    setVisible(blocoRepresentante, envolvido);
+    const multiplos = pjMultiplosAtivo();
+    setVisible(blocoRepresentante, envolvido && !multiplos);
     setVisible(opcaoCreditoRepresentante, envolvido);
     setVisible(opcaoCreditoDividido, envolvido);
     if (!envolvido) {
@@ -102,6 +137,8 @@
     const name = ev.target.name;
     if (name === "quem_preenche") atualizarQuemPreenche();
     if (name === "representante_envolvido") atualizarRepresentanteVisibility();
+    if (name === "beneficiario_pj_multiplos_assinantes") atualizarPjMultiplos();
+    if (name === "beneficiario_pj_qtd_assinantes") atualizarPjQuantidade();
     if (name === "tipo_deposito") atualizarTipoDeposito();
     if (name === "forma_recebimento") atualizarFormaRecebimento();
     if (name === "ir.isento") atualizarIsencao();
@@ -110,7 +147,10 @@
     if (name === "analfabeto.modo") atualizarModoAnalfabeto();
   });
 
+  form.querySelector('input[name="beneficiario.cpf_cnpj"]').addEventListener("input", atualizarBeneficiarioPJ);
+
   // Estado inicial
+  atualizarBeneficiarioPJ();
   atualizarQuemPreenche();
   atualizarTipoDeposito();
   atualizarFormaRecebimento();

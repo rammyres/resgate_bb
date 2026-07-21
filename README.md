@@ -32,13 +32,23 @@ de Renda (modelo IN SRF nº 491/2005) anexada ao final do PDF.
    - Se o tipo de depósito for **Precatório ou RPV Federal** e o
      beneficiário se declarar **isento de IR**, uma seção adicional coleta
      os dados da Declaração de Isenção (nome, CPF/CNPJ, endereço, processo,
-     vara, município, valor, data).
+     vara, município, valor) — o local e a data da assinatura são
+     reaproveitados do "Local e Data" do final do formulário principal, sem
+     perguntar de novo.
+   - Beneficiário pessoa jurídica (CNPJ): se o estatuto exigir assinatura
+     de mais de uma pessoa (ex.: presidente e tesoureiro), o formulário
+     detecta automaticamente que o CPF/CNPJ informado é um CNPJ e permite
+     escolher entre 2 ou 3 assinantes — os nomes e CPFs são concatenados,
+     em ordem, no campo "Representante Legal" do PDF (não há campos
+     próprios no formulário do BB para múltiplos assinantes).
    - Beneficiário analfabeto: assinatura com duas testemunhas (nome/CPF
      preenchidos diretamente no PDF, campos que a versão atual do
      formulário do BB já disponibiliza) ou termo de quitação "a rogo" —
      nesse caso o nome/CPF de quem assina são reaproveitados
      automaticamente para o campo impresso sob a assinatura, e o termo
-     exige duas testemunhas próprias, distintas das do método direto.
+     exige duas testemunhas próprias, distintas das do método direto. Em
+     ambos os casos as testemunhas são opcionais — quem preferir pode
+     deixar em branco e assinar à mão no documento impresso.
    - Campos de CPF/CNPJ e número de processo (padrão CNJ) são formatados
      automaticamente conforme o usuário digita.
 2. Ao enviar, o backend:

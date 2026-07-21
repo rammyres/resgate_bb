@@ -61,17 +61,48 @@ def build_formulario_values(
     values[fm.F_BENEF_NOME] = benef_nome
     values[fm.F_BENEF_CPF_CNPJ] = benef_cpf
 
+    # Pessoa jurídica (CNPJ) cujo estatuto exige assinatura de mais de uma
+    # pessoa (ex.: presidente e tesoureiro): os nomes e CPFs de todos os
+    # assinantes são concatenados, em ordem, no mesmo campo "Representante
+    # Legal" do PDF — não há campos próprios no formulário do BB para
+    # múltiplos assinantes.
+    pj_multiplos = payload.get("beneficiario_pj_multiplos_assinantes") == "sim"
+
     # Um representante legal/procurador pode estar envolvido mesmo quando é
     # o próprio beneficiário quem preenche o formulário (por exemplo, para
     # receber parte do valor por rateio) — por isso essa condição é
-    # independente de "quem está preenchendo".
+    # independente de "quem está preenchendo". A pessoa jurídica com
+    # múltiplos assinantes também conta como representante envolvido.
     representante_envolvido = (
-        quem_preenche == "procurador" or payload.get("representante_envolvido") == "sim"
+        pj_multiplos
+        or quem_preenche == "procurador"
+        or payload.get("representante_envolvido") == "sim"
     )
 
     rep_nome = ""
     rep_cpf = ""
-    if representante_envolvido:
+    if pj_multiplos:
+        qtd_raw = payload.get("beneficiario_pj_qtd_assinantes")
+        if qtd_raw not in ("2", "3"):
+            errors.append("Selecione quantas pessoas precisam assinar (2 ou 3).")
+            qtd = 2
+        else:
+            qtd = int(qtd_raw)
+
+        assinantes = payload.get("beneficiario_pj_assinantes") or []
+        nomes = []
+        cpfs = []
+        for i in range(qtd):
+            assinante = assinantes[i] if i < len(assinantes) else {}
+            if not isinstance(assinante, dict):
+                assinante = {}
+            nomes.append(_req(assinante, "nome", f"Nome do {i + 1}º assinante", errors))
+            cpfs.append(_req(assinante, "cpf", f"CPF do {i + 1}º assinante", errors))
+        rep_nome = " | ".join(nomes)
+        rep_cpf = " | ".join(cpfs)
+        values[fm.F_REP_NOME] = rep_nome
+        values[fm.F_REP_CPF_CNPJ] = rep_cpf
+    elif representante_envolvido:
         rep = payload.get("representante") or {}
         rep_nome = _req(rep, "nome", "Nome do representante legal/procurador", errors)
         rep_cpf = _req(rep, "cpf_cnpj", "CPF/CNPJ do representante legal/procurador", errors)
